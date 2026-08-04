@@ -1,57 +1,76 @@
 <?php
-
-//all
-//byid
+include("../configs/connectDB.php");
 
 function getAllServices() {
      
     global $conn;
 
-    $sql = "SELECT id, title, icon_code FROM services";
+    $sql = "SELECT id, title, description, icon_code FROM services";
     $result = $conn->query($sql);
 
     $data = [];
 
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $data[] = $row;
-        }
+    if(!$result||$result->num_rows == null){
+        $data = ["error" => "No data found"];
+    }
+    else if ($result->num_rows > 0) {
+        $data = $result->fetch_all(MYSQLI_ASSOC);
     }
 
     return $data;
 }
 
 
-function getServiceWithHighlights($id) {
+function getService($id) {
 
     global $conn;
 
-    // Prepare statement for main service
-    $stmt = $conn->prepare("SELECT id, title, icon_code FROM services WHERE id = ?");
+    $sql = "
+        SELECT 
+            s.id, 
+            s.title, 
+            s.description,
+            s.icon_code,
+            CONCAT(
+                '[',
+                IFNULL(
+                    GROUP_CONCAT(
+                        CONCAT(
+                            '{\"id\":', p.id, 
+                            ',\"point\":\"', REPLACE(p.point, '\"', '\\\\\"'), '\"}'
+                        )
+                    ),
+                    ''
+                ),
+                ']'
+            ) AS points
+        FROM services s
+        LEFT JOIN services_points p ON p.sid = s.id
+        WHERE s.id = ?
+        GROUP BY s.id
+    ";
+
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $id);
     $stmt->execute();
 
     $result = $stmt->get_result();
-    $service = $result->fetch_assoc();
 
-    if (!$service) {
-        return null; // not found
+    
+    // ❌ No data
+    if (!$result || $result->num_rows == 0) {
+        return ["error" => "Service not found"];
+    }
+        
+    $data = [];
+
+    // ✅ Fetch
+    $data = $result->fetch_all(MYSQLI_ASSOC);
+
+    // 🔥 Convert JSON string → array
+    foreach ($data as &$row) {
+        $row['points'] = json_decode($row['points'], true);
     }
 
-    // Get related highlights
-    $stmt2 = $conn->prepare("SELECT id, highlight FROM highlights WHERE service_id = ?");
-    $stmt2->bind_param("i", $id);
-    $stmt2->execute();
-
-    $result2 = $stmt2->get_result();
-    $highlights = [];
-
-    while ($row = $result2->fetch_assoc()) {
-        $highlights[] = $row;
-    }
-
-    // Attach highlights
-    $service['highlights'] = $highlights;
-
-    return $service;
+    return $data;
 }
