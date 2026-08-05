@@ -59,7 +59,7 @@ function getService($id) {
     
     // ❌ No data
     if (!$result || $result->num_rows == 0) {
-        return ["error" => "Service not found"];
+        return ["error" => "No data found"];
     }
         
     $data = [];
