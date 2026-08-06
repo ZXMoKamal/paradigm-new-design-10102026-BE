@@ -21,6 +21,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
         $services =  getService($id);
             
+    }else{
+        
+        $services = array("error"=>"Invalid service id");
     }
         
     if(array_key_exists("error",$services)){
