@@ -21,7 +21,7 @@ function getAllServices() {
 }
 
 
-function getService($id) {
+function getService($title) {
 
     global $conn;
 
@@ -46,12 +46,12 @@ function getService($id) {
             ) AS points
         FROM services s
         LEFT JOIN services_points p ON p.sid = s.id
-        WHERE s.id = ?
+        WHERE s.title = ?
         GROUP BY s.id
     ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
+    $stmt->bind_param("s", $title);
     $stmt->execute();
 
     $result = $stmt->get_result();
@@ -65,12 +65,12 @@ function getService($id) {
     $data = [];
 
     // ✅ Fetch
-    $data = $result->fetch_all(MYSQLI_ASSOC);
+    $data = $result->fetch_assoc();
 
     // 🔥 Convert JSON string → array
-    foreach ($data as &$row) {
-        $row['points'] = json_decode($row['points'], true);
-    }
+    // foreach ($data as &$row) {
+        $data['points'] = json_decode($data['points'], true);
+    // }
 
     return $data;
 }
