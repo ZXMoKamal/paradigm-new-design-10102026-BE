@@ -5,25 +5,22 @@ include ("../configs/header.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
-    $id = array_key_exists("id", $_GET)?htmlspecialchars($_GET['id']):"all";
+    $title = array_key_exists("title", $_GET)?htmlspecialchars($_GET['title']):"all";
 
-    if (empty($id) || $id=="all") {
+    if (empty($title) || $title=="all") {
         
         //$get all services data from db
 
         $services =  getAllServices();
 
 
-    } else if(ctype_digit($id)) {
+    } else if($title) {
 
         //$if string contain only digits
         //$get service data from db for id 
+        $title = html_entity_decode(urldecode($title), ENT_QUOTES | ENT_HTML5);
+        $services =  getService($title);
 
-        $services =  getService($id);
-            
-    }else{
-        
-        $services = array("error"=>"Invalid service id");
     }
         
     if(array_key_exists("error",$services)){
