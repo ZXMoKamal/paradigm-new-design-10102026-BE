@@ -4,6 +4,8 @@
     include ("../controllers/db/contactUs.php");
     include ("../forms/verifyContactUs.php");
     include ("../captcha/verifyCaptcha.php");
+    include ("../email/send.php");
+    include ("../email/templates.php");
 
     header("Content-Type: application/json");
 
@@ -49,7 +51,33 @@
     $terms = htmlspecialchars($terms, ENT_QUOTES, 'UTF-8');
     $captcha = htmlspecialchars($captcha, ENT_QUOTES, 'UTF-8');
 
-    if (setContactUs($name, $email, $phone, $subject, $service, $message)) {
+
+    $customerMail = sendBrevoEmail(
+        $email,
+        $name,
+        "We received your message",
+        $customerMSGTemplate($name)
+    );
+    
+    $adminMail = sendBrevoEmail(
+        //"info@paradigm-eg.com",
+        "mohamed.kamal.paradigm@gmail.com",
+        "Paradigm",
+        "New Contact Form Message: " . $subject,
+        $adminMSGTemplate($name,$email,$phone,$service,$subject,$message),
+        $email,
+        $name
+    );
+
+    if(!$customerMail["success"] || !$adminMail["success"]){
+        http_response_code(500);
+        echo json_encode(["error" => "Failed to send"]);
+        exit;
+    }
+
+
+    if (setContactUs($name, $email, $phone, $subject, $service, $message, $adminMail["success"], $customerMail["success"])) {
+        //$encryption
         http_response_code(200);
         echo json_encode(["success" => "Form submitted successfully"]);
     } else {
