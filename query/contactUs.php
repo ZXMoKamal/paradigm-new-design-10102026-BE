@@ -56,7 +56,7 @@
         $email,
         $name,
         "We received your message",
-        $customerMSGTemplate($name)
+        customerMSGTemplate($name)
     );
     
     $adminMail = sendBrevoEmail(
@@ -64,15 +64,15 @@
         "mohamed.kamal.paradigm@gmail.com",
         "Paradigm",
         "New Contact Form Message: " . $subject,
-        $adminMSGTemplate($name,$email,$phone,$service,$subject,$message),
+        adminMSGTemplate($name,$email,$phone,$service,$subject,$message),
         $email,
         $name
     );
 
     if(!$customerMail["success"] || !$adminMail["success"]){
         http_response_code(500);
-        echo json_encode(["error" => "Failed to send"]);
-        exit;
+        echo json_encode(["error" => "Failed to send email"]);
+        // exit;
     }
 
 

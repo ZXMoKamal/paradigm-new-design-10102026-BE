@@ -39,32 +39,32 @@ function adminMSGTemplate($name,$email,$phone,$service,$subject,$message){
 
 <tr>
     <td><strong>Name</strong></td>
-    <td>" . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . "</td>
+    <td>" . $name. "</td>
 </tr>
 
 <tr>
     <td><strong>Email</strong></td>
-    <td>" . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . "</td>
+    <td>" . $email. "</td>
 </tr>
 
 <tr>
     <td><strong>Phone</strong></td>
-    <td>" . htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') . "</td>
+    <td>" . $phone. "</td>
 </tr>
 
 <tr>
     <td><strong>Service</strong></td>
-    <td>" . htmlspecialchars($service, ENT_QUOTES, 'UTF-8') . "</td>
+    <td>" . $service. "</td>
 </tr>
 
 <tr>
     <td><strong>Subject</strong></td>
-    <td>" . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . "</td>
+    <td>" . $subject. "</td>
 </tr>
 
 <tr>
     <td><strong>Message</strong></td>
-    <td>" . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . "</td>
+    <td>" . nl2br($message) . "</td>
 </tr>
 
 </table>
