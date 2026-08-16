@@ -5,21 +5,21 @@ include ("../configs/header.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
-    $title = array_key_exists("title", $_GET)?htmlspecialchars($_GET['title']):"all";
+    $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
 
-    if (empty($title) || $title=="all") {
+    if (empty($requestTitle) || $requestTitle=="all") {
         
         //$get all services data from db
 
         $services =  getAllServices();
 
 
-    } else if($title) {
+    } else if($requestTitle) {
 
         //$if string contain only digits
         //$get service data from db for id 
-        $title = html_entity_decode(urldecode($title), ENT_QUOTES | ENT_HTML5);
-        $services =  getService($title);
+        $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
+        $services =  getService($requestTitle);
 
     }
         

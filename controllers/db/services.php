@@ -5,7 +5,7 @@ function getAllServices() {
      
     global $conn;
 
-    $sql = "SELECT id, title, description, icon_code FROM services";
+    $sql = "SELECT id, title, description, icon_code, requestTitle FROM services";
     $result = $conn->query($sql);
 
     $data = [];
@@ -21,7 +21,7 @@ function getAllServices() {
 }
 
 
-function getService($title) {
+function getService($requestTitle) {
 
     global $conn;
 
@@ -31,6 +31,7 @@ function getService($title) {
             s.title, 
             s.description,
             s.icon_code,
+            s.requestTitle,
             CONCAT(
                 '[',
                 IFNULL(
@@ -46,12 +47,12 @@ function getService($title) {
             ) AS points
         FROM services s
         LEFT JOIN services_points p ON p.sid = s.id
-        WHERE s.title = ?
+        WHERE s.requestTitle = ?
         GROUP BY s.id
     ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $title);
+    $stmt->bind_param("s", $requestTitle);
     $stmt->execute();
 
     $result = $stmt->get_result();
