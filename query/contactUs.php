@@ -6,6 +6,8 @@
     include ("../captcha/verifyCaptcha.php");
     include ("../email/send.php");
     include ("../email/templates.php");
+    include ("../controllers/db/services.php");
+
 
     header("Content-Type: application/json");
 
@@ -48,8 +50,21 @@
     $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
     $phone = htmlspecialchars($phone, ENT_QUOTES, 'UTF-8');
     $email = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+    $service  = htmlspecialchars($service, ENT_QUOTES, 'UTF-8');
     $terms = htmlspecialchars($terms, ENT_QUOTES, 'UTF-8');
     $captcha = htmlspecialchars($captcha, ENT_QUOTES, 'UTF-8');
+
+
+    //$get service name by id
+    $serviceById = getServiceById($service);
+    // echo json_encode($serviceById);
+    if (array_key_exists("error",$serviceById)) {
+        http_response_code(404);
+        echo json_encode(["error" => "can't find service"]);
+    }else{
+
+        $serviceName =  $serviceById[0]["title"];
+    }
 
 
     $customerMail = sendBrevoEmail(
@@ -64,7 +79,7 @@
         "mohamed.kamal.paradigm@gmail.com",
         "Paradigm",
         "New Contact Form Message: " . $subject,
-        adminMSGTemplate($name,$email,$phone,$service,$subject,$message),
+        adminMSGTemplate($name,$email,$phone,$serviceName,$subject,$message),
         $email,
         $name
     );
@@ -83,7 +98,7 @@
     // exit;
     }
 
-    if (setContactUs($name, $email, $phone, $subject, $service, $message, $adminMail["success"], $customerMail["success"])) {
+    if (setContactUs($name, $email, $phone, $subject, $service, $serviceName, $message, $adminMail["success"], $customerMail["success"])) {
         //$encryption
         http_response_code(200);
         echo json_encode(["success" => "Form submitted successfully"]);
