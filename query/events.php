@@ -6,9 +6,9 @@ include ("../configs/header.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
-    $name = array_key_exists("name", $_GET)?htmlspecialchars($_GET['name']):"all";
+    $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
 
-    if (empty($name) || $name=="all") {
+    if (empty($requestTitle) || $requestTitle=="all") {
         
         //$get all events data from db
 
@@ -34,13 +34,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             echo json_encode($events,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
-    } else if($name) {
+    } else if($requestTitle) {
 
         //$if string contain only digits
-        //$get event data from db for name 
+        //$get event data from db for requestTitle 
 
-        $name = html_entity_decode(urldecode($name), ENT_QUOTES | ENT_HTML5);
-        $events =  getEvent($name);
+        $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
+        $events =  getEvent($requestTitle);
 
         if(array_key_exists("error",$events)){
             http_response_code(404);

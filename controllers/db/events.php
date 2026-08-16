@@ -16,7 +16,7 @@ function getAllEvents($from, $to) {
         return ["error" => "Invalid range"];
     }
 
-    $sql = $sql = "SELECT id, name FROM events ORDER BY id DESC LIMIT ?, ?";
+    $sql = $sql = "SELECT id, name, requestTitle FROM events ORDER BY id DESC LIMIT ?, ?";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ii", $from, $limit);
@@ -38,14 +38,14 @@ function getAllEvents($from, $to) {
 }
 
 
-function getEvent($name) {
+function getEvent($requestTitle) {
 
     global $conn;
 
-    $sql = "SELECT id, name, description, client, location, date FROM events WHERE name = ? LIMIT 1";
+    $sql = "SELECT id, name, description, client, location, date, requestTitle FROM events WHERE requestTitle = ? LIMIT 1";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $name);
+    $stmt->bind_param("s", $requestTitle);
     $stmt->execute();
 
     $result = $stmt->get_result();
