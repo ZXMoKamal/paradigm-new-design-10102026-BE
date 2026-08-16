@@ -74,3 +74,22 @@ function getService($title) {
 
     return $data;
 }
+
+function getServiceById($id) {
+     
+    global $conn;
+
+    $sql = "SELECT id, title FROM services where id =" . $id;
+    $result = $conn->query($sql);
+
+    $data = [];
+
+    if(!$result||$result->num_rows == null){
+        $data = ["error" => "No data found"];
+    }
+    else if ($result->num_rows > 0) {
+        $data = $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    return $data;
+}
