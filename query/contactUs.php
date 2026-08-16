@@ -69,12 +69,19 @@
         $name
     );
 
-    if(!$customerMail["success"] || !$adminMail["success"]){
+    if(!$customerMail["success"]){
         http_response_code(500);
-        echo json_encode(["error" => "Failed to send email"]);
+        echo json_encode(["error" => "Failed to send email (client)"]);
+        // echo $customerMail["error"];
         // exit;
     }
-
+    
+    if(!$adminMail["success"]){
+        http_response_code(500);
+        echo json_encode(["error" => "Failed to send email (admin)"]);
+        // echo $adminMail["error"];
+    // exit;
+    }
 
     if (setContactUs($name, $email, $phone, $subject, $service, $message, $adminMail["success"], $customerMail["success"])) {
         //$encryption
