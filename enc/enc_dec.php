@@ -1,12 +1,12 @@
 <?php
-
+$config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
 const ENCRYPTION_METHOD = 'aes-256-gcm';
 
 function getEncryptionKey()
 {
     // IMPORTANT:
     // Store this in an environment variable in production.
-    $key = "7HhD7H55ozIXlneYT1zZAHzbxa/3ufQSiXYFChf69Xg=";//getenv('CONTACT_ENCRYPTION_KEY');
+    $key = $config["encryption"]["key"];//getenv('CONTACT_ENCRYPTION_KEY');
 
     if (!$key) {
         throw new Exception("Encryption key is not configured.");

@@ -1,8 +1,12 @@
 <?php
-    $host = "localhost";      // Database host
-    $dbname = "paradigm-portfolio";  // Your database name
-    $username = "root";       // Database username
-    $password = "";           // Database password
+
+$config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
+
+
+    $host = $config["db"]["host"];      // Database host
+    $dbname = $config["db"]["name"];  // Your database name
+    $username = $config["db"]["user"];       // Database username
+    $password = $config["db"]["password"];           // Database password
 
     // Create connection
     $conn = new mysqli($host, $username, $password, $dbname);

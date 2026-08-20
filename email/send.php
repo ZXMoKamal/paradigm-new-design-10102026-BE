@@ -1,5 +1,5 @@
 <?php
-
+$config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
 function sendBrevoEmail(
     $toEmail,
     $toName,
@@ -9,7 +9,7 @@ function sendBrevoEmail(
     $replyToName = null
 ) {
 
-    $brevoApiKey = "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";
+    $brevoApiKey = $config["brevo"]["api_key"];
 
     $senderEmail = "mohamed.kamal.paradigm@gmail.com";//"info@paradigm-eg.com";
     $senderName  = "Paradigm";

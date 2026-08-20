@@ -1,9 +1,9 @@
 <?php
-
+$config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
     function verifyCaptcha ($captcha) {
 
         // 🔐 Cloudflare secret key
-        $secretKey = "0x4AAAAAAEDtK1VqwFtn6qkJAY8uSsUm7v8";
+        $secretKey = $config["turnstile"]["secret_key"];
 
         // 🔒 Verify Turnstile
         $verifyUrl = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
