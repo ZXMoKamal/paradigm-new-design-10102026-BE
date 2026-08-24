@@ -4,6 +4,8 @@ const ENCRYPTION_METHOD = 'aes-256-gcm';
 
 function getEncryptionKey()
 {
+global $config;
+    
     // IMPORTANT:
     // Store this in an environment variable in production.
     $key = $config["encryption"]["key"];//getenv('CONTACT_ENCRYPTION_KEY');

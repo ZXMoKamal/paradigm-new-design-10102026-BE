@@ -8,6 +8,7 @@ function sendBrevoEmail(
     $replyToEmail = null,
     $replyToName = null
 ) {
+global $config;
 
     $brevoApiKey = $config["brevo"]["api_key"];
 

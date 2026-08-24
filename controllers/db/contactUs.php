@@ -5,7 +5,6 @@
     function setContactUs( $name, $email, $phone, $subject, $service, $serviceName, $message, $adminMailStatus, $customerMailStatus) {
         global $conn;
 
-
         $nameEncrypted = encryptData($name);
         $emailEncrypted = encryptData($email);
         $phoneEncrypted = encryptData($phone);

@@ -1,7 +1,7 @@
 <?php
 $config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
     function verifyCaptcha ($captcha) {
-
+global $config;
         // 🔐 Cloudflare secret key
         $secretKey = $config["turnstile"]["secret_key"];
 
