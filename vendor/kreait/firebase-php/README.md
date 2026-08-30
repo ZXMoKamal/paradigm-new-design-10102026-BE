@@ -1,83 +1,79 @@
-# Firebase PHP Client
+<div align="center">
 
-[![Packagist](https://img.shields.io/packagist/v/kreait/firebase-php.svg?style=flat-square)](https://packagist.org/packages/kreait/firebase-php)
-[![Travis](https://img.shields.io/travis/kreait/firebase-php.svg?style=flat-square)](https://travis-ci.org/kreait/firebase-php)
-[![Scrutinizer](https://img.shields.io/scrutinizer/g/kreait/firebase-php.svg?style=flat-square)](https://scrutinizer-ci.com/g/kreait/firebase-php/)
-[![Packagist](https://img.shields.io/packagist/l/kreait/firebase-php.svg?style=flat-square)](https://github.com/kreait/firebase-php/blob/master/LICENSE)
-[![Gitter](https://img.shields.io/badge/Gitter-Join%20Chat-45cba1.svg?style=flat-square)](https://gitter.im/kreait/firebase-php)
+# Firebase for PHP
 
-A PHP client for [http://www.firebase.com](http://www.firebase.com).
+<img src="docs/_static/logo.svg" alt="Firebase Admin PHP SDK Logo" width="120">
 
----
+<p><em>Firebase Admin SDK for PHP</em></p>
+
+[![Current version](https://img.shields.io/packagist/v/kreait/firebase-php.svg?logo=composer)](https://packagist.org/packages/kreait/firebase-php)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/kreait/firebase-php.svg)](https://packagist.org/packages/kreait/firebase-php/stats)
+[![Total Downloads](https://img.shields.io/packagist/dt/kreait/firebase-php.svg)](https://packagist.org/packages/kreait/firebase-php/stats)<br/>
+[![Tests](https://github.com/kreait/firebase-php/actions/workflows/tests.yml/badge.svg)](https://github.com/kreait/firebase-php/actions/workflows/tests.yml)
+[![Integration Tests](https://github.com/kreait/firebase-php/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/kreait/firebase-php/actions/workflows/integration-tests.yml)
+[![Emulator Tests](https://github.com/kreait/firebase-php/actions/workflows/emulator-tests.yml/badge.svg)](https://github.com/kreait/firebase-php/actions/workflows/emulator-tests.yml)
+[![Sponsor](https://img.shields.io/static/v1?logo=GitHub&label=Sponsor&message=%E2%9D%A4&color=ff69b4)](https://github.com/sponsors/jeromegamez)
+
+</div>
+
+> [!IMPORTANT]
+> **Support the project:** This SDK is downloaded 1M+ times monthly and powers thousands of applications.
+> If it saves you or your team time, please consider
+> [sponsoring its development](https://github.com/sponsors/jeromegamez).
+
+> [!NOTE]
+> If you are interested in using the PHP Admin SDK as a client for end-user access (for example, in a web application),
+> as opposed to admin access from a privileged environment (like a server), you should instead follow the
+> [instructions for setting up the client JavaScript SDK](https://firebase.google.com/docs/web/setup).
+
+## Overview
+
+[Firebase](https://firebase.google.com/) provides the tools and infrastructure you need to develop your app, grow your user base, and earn money. The Firebase Admin PHP SDK enables access to Firebase services from privileged environments (such as servers or cloud) in PHP.
+
+For more information, visit the [Firebase Admin PHP SDK documentation](https://firebase-php.readthedocs.io/).
 
 ## Installation
 
-The recommended way to install Firebase is through
-[Composer](http://getcomposer.org).
+The recommended way to install the Firebase Admin SDK is with [Composer](https://getcomposer.org).
+Composer is a dependency management tool for PHP that allows you to declare the dependencies
+your project needs and installs them into your project.
 
 ```bash
-# Install Composer
-curl -sS https://getcomposer.org/installer | php
+composer require "kreait/firebase-php:^7.0"
 ```
 
-Next, run the Composer command to install the latest stable version:
+Please continue to the [Setup section](docs/setup.rst) to learn more about connecting your application to Firebase.
 
-```bash
-composer require kreait/firebase-php
-```
+If you want to use the SDK within a Framework, please follow the installation instructions here:
 
-After installing, you need to require Composer's autoloader:
+- **Laravel**: https://github.com/kreait/laravel-firebase
+- **Symfony**: https://github.com/kreait/firebase-bundle
+
+## Quickstart
 
 ```php
-require 'vendor/autoload.php';
+use Kreait\Firebase\Factory;
+
+$factory = (new Factory)
+    ->withServiceAccount('/path/to/firebase_credentials.json')
+    ->withDatabaseUri('https://my-project-default-rtdb.firebaseio.com');
+
+$auth = $factory->createAuth();
+$realtimeDatabase = $factory->createDatabase();
+$cloudMessaging = $factory->createMessaging();
+$remoteConfig = $factory->createRemoteConfig();
+$cloudStorage = $factory->createStorage();
+$firestore = $factory->createFirestore();
 ```
 
-## Documentation
+## Powered by
 
-1. [Working with the `Firebase` class](doc/firebase.md)
-1. [Working with References](doc/reference.md)
-1. [Querying data](doc/queries.md)
-1. [Configuration](doc/configuration.md)
-1. [Authentication](doc/authentication.md)
+[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)
 
-## Example
+Thanks to [JetBrains](https://www.jetbrains.com/) credits for providing [a free PhpStorm license](https://jb.gg/OpenSourceSupport) for the development of this open-source package.
 
-```php
-require __DIR__.'/vendor/autoload.php';
+## License
 
-use Kreait\Firebase\Configuration;
-use Kreait\Firebase\Firebase;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
+Firebase Admin PHP SDK is licensed under the [MIT License](LICENSE).
 
-$logger = new Logger('firebase');
-$logger->pushHandler(new StreamHandler('php://stdout'));
-
-$configuration = new Configuration();
-$configuration->setLogger($logger);
-
-$firebase = new Firebase('https://myapp.firebaseio.com', $configuration);
-
-$simpsons = $firebase->getReference('data/simpsons');
-
-$homer = $simpsons->getReference('homer');
-$homer->set(['name' => 'Homer Simpson', 'email' => 'marge@simpson.com']);
-// Ooops, wrong email address
-$homer->update(['email' => 'homer@simpson.com']);
-
-$children = $homer->getReference('children');
-$bart = $children->push(['name' => 'Bart Simpson', 'email' => 'bart@simpson.com']);
-$lisa = $children->push(['name' => 'Lisa Simpson', 'email' => 'lisa@simpson.com']);
-$maggie = $children->push(['name' => 'Maggie Simpson', 'email' => 'maggie@simpson.com']);
-
-print_r($homer->getData());
-```
-
-
-## Development Notes (in Progress)
-
-- [chag](https://github.com/mtdowling/chag) for the changelog
-- [PHP Coding Standards Fixer](http://cs.sensiolabs.org) before commiting code
-- Present tense in commit messages
-- Pull Requests should be rebased into one commit before merging
-
+Your use of Firebase is governed by the [Terms of Service for Firebase Services](https://firebase.google.com/terms/).

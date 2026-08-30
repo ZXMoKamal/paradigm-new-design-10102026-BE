@@ -23,12 +23,12 @@ namespace Psr\Http\Message;
  * - Upload files, if any (as represented by $_FILES)
  * - Deserialized body parameters (generally from $_POST)
  *
- * $_SERVER and $_FILES values MUST be treated as immutable, as they represent
- * application state at the time of request; as such, no methods are provided
- * to allow modification of those values. The other values provide such methods,
- * as they can be restored from $_SERVER, $_FILES, or the request body, and may
- * need treatment during the application (e.g., body parameters may be
- * deserialized based on content type).
+ * $_SERVER values MUST be treated as immutable, as they represent application
+ * state at the time of request; as such, no methods are provided to allow
+ * modification of those values. The other values provide such methods, as they
+ * can be restored from $_SERVER or the request body, and may need treatment
+ * during the application (e.g., body parameters may be deserialized based on
+ * content type).
  *
  * Additionally, this interface recognizes the utility of introspecting a
  * request to derive and match additional parameters (e.g., via URI path
@@ -38,7 +38,7 @@ namespace Psr\Http\Message;
  *
  * Requests are considered immutable; all methods that might change state MUST
  * be implemented such that they retain the internal state of the current
- * message and return a new instance that contains the changed state.
+ * message and return an instance that contains the changed state.
  */
 interface ServerRequestInterface extends RequestInterface
 {
@@ -51,7 +51,7 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @return array
      */
-    public function getServerParams();
+    public function getServerParams(): array;
 
     /**
      * Retrieve cookies.
@@ -63,40 +63,43 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @return array
      */
-    public function getCookieParams();
+    public function getCookieParams(): array;
 
     /**
-     * Create a new instance with the specified cookies.
+     * Return an instance with the specified cookies.
      *
      * The data IS NOT REQUIRED to come from the $_COOKIE superglobal, but MUST
      * be compatible with the structure of $_COOKIE. Typically, this data will
      * be injected at instantiation.
      *
+     * This method MUST NOT update the related Cookie header of the request
+     * instance, nor related values in the server params.
+     *
      * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that has the
+     * immutability of the message, and MUST return an instance that has the
      * updated cookie values.
      *
      * @param array $cookies Array of key/value pairs representing cookies.
-     * @return self
+     * @return static
      */
-    public function withCookieParams(array $cookies);
+    public function withCookieParams(array $cookies): ServerRequestInterface;
 
     /**
      * Retrieve query string arguments.
      *
      * Retrieves the deserialized query string arguments, if any.
      *
-     * Note: the query params might not be in sync with the URL or server
+     * Note: the query params might not be in sync with the URI or server
      * params. If you need to ensure you are only getting the original
-     * values, you may need to parse the composed URL or the `QUERY_STRING`
-     * composed in the server params.
+     * values, you may need to parse the query string from `getUri()->getQuery()`
+     * or from the `QUERY_STRING` server param.
      *
      * @return array
      */
-    public function getQueryParams();
+    public function getQueryParams(): array;
 
     /**
-     * Create a new instance with the specified query string arguments.
+     * Return an instance with the specified query string arguments.
      *
      * These values SHOULD remain immutable over the course of the incoming
      * request. They MAY be injected during instantiation, such as from PHP's
@@ -106,32 +109,45 @@ interface ServerRequestInterface extends RequestInterface
      * purposes of how duplicate query parameters are handled, and how nested
      * sets are handled.
      *
-     * Setting query string arguments MUST NOT change the URL stored by the
+     * Setting query string arguments MUST NOT change the URI stored by the
      * request, nor the values in the server params.
      *
      * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that has the
+     * immutability of the message, and MUST return an instance that has the
      * updated query string arguments.
      *
      * @param array $query Array of query string arguments, typically from
      *     $_GET.
-     * @return self
+     * @return static
      */
-    public function withQueryParams(array $query);
+    public function withQueryParams(array $query): ServerRequestInterface;
 
     /**
-     * Retrieve the upload file metadata.
+     * Retrieve normalized file upload data.
      *
-     * This method MUST return file upload metadata in the same structure
-     * as PHP's $_FILES superglobal.
+     * This method returns upload metadata in a normalized tree, with each leaf
+     * an instance of Psr\Http\Message\UploadedFileInterface.
      *
-     * These values MUST remain immutable over the course of the incoming
-     * request. They SHOULD be injected during instantiation, such as from PHP's
-     * $_FILES superglobal, but MAY be derived from other sources.
+     * These values MAY be prepared from $_FILES or the message body during
+     * instantiation, or MAY be injected via withUploadedFiles().
      *
-     * @return array Upload file(s) metadata, if any.
+     * @return array An array tree of UploadedFileInterface instances; an empty
+     *     array MUST be returned if no data is present.
      */
-    public function getFileParams();
+    public function getUploadedFiles(): array;
+
+    /**
+     * Create a new instance with the specified uploaded files.
+     *
+     * This method MUST be implemented in such a way as to retain the
+     * immutability of the message, and MUST return an instance that has the
+     * updated body parameters.
+     *
+     * @param array $uploadedFiles An array tree of UploadedFileInterface instances.
+     * @return static
+     * @throws \InvalidArgumentException if an invalid structure is provided.
+     */
+    public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface;
 
     /**
      * Retrieve any parameters provided in the request body.
@@ -151,7 +167,7 @@ interface ServerRequestInterface extends RequestInterface
     public function getParsedBody();
 
     /**
-     * Create a new instance with the specified body parameters.
+     * Return an instance with the specified body parameters.
      *
      * These MAY be injected during instantiation.
      *
@@ -169,14 +185,16 @@ interface ServerRequestInterface extends RequestInterface
      * instance with the deserialized parameters.
      *
      * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that has the
+     * immutability of the message, and MUST return an instance that has the
      * updated body parameters.
      *
      * @param null|array|object $data The deserialized body data. This will
      *     typically be in an array or object.
-     * @return self
+     * @return static
+     * @throws \InvalidArgumentException if an unsupported argument type is
+     *     provided.
      */
-    public function withParsedBody($data);
+    public function withParsedBody($data): ServerRequestInterface;
 
     /**
      * Retrieve attributes derived from the request.
@@ -189,7 +207,7 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @return array Attributes derived from the request.
      */
-    public function getAttributes();
+    public function getAttributes(): array;
 
     /**
      * Retrieve a single derived request attribute.
@@ -206,39 +224,38 @@ interface ServerRequestInterface extends RequestInterface
      * @param mixed $default Default value to return if the attribute does not exist.
      * @return mixed
      */
-    public function getAttribute($name, $default = null);
+    public function getAttribute(string $name, $default = null);
 
     /**
-     * Create a new instance with the specified derived request attribute.
+     * Return an instance with the specified derived request attribute.
      *
      * This method allows setting a single derived request attribute as
      * described in getAttributes().
      *
      * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that has the
+     * immutability of the message, and MUST return an instance that has the
      * updated attribute.
      *
      * @see getAttributes()
      * @param string $name The attribute name.
      * @param mixed $value The value of the attribute.
-     * @return self
+     * @return static
      */
-    public function withAttribute($name, $value);
+    public function withAttribute(string $name, $value): ServerRequestInterface;
 
     /**
-     * Create a new instance that removes the specified derived request
-     * attribute.
+     * Return an instance that removes the specified derived request attribute.
      *
      * This method allows removing a single derived request attribute as
      * described in getAttributes().
      *
      * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that removes
+     * immutability of the message, and MUST return an instance that removes
      * the attribute.
      *
      * @see getAttributes()
      * @param string $name The attribute name.
-     * @return self
+     * @return static
      */
-    public function withoutAttribute($name);
+    public function withoutAttribute(string $name): ServerRequestInterface;
 }
