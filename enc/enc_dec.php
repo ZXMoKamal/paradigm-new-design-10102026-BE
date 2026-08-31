@@ -74,6 +74,7 @@ function decryptData($encryptedValue)
 
     $data = base64_decode($encryptedValue, true);
 
+
     if ($data === false) {
         throw new Exception("Invalid encrypted data.");
     }
@@ -82,6 +83,7 @@ function decryptData($encryptedValue)
     if (strlen($data) < 28) {
         throw new Exception("Invalid encrypted data.");
     }
+
 
     $iv = substr($data, 0, 12);
     $tag = substr($data, 12, 16);

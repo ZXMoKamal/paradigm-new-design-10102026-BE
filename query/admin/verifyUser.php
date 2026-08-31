@@ -8,5 +8,6 @@ $user = verifyFirebaseToken();
 
 echo json_encode([
     "message" => "Authenticated successfully",
-    "uid" => $user["uid"]
+    "uid" => $user["uid"],
+    "name" => $user["name"]
 ]);

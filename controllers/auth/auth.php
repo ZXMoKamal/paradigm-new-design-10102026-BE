@@ -1,5 +1,5 @@
 <?php
-
+require_once __DIR__ . "/../../configs/connectDB.php";
 require_once __DIR__ . "/../../configs/firebase.php";
 
 use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
@@ -52,20 +52,47 @@ function verifyFirebaseToken() {
 
         $verifiedToken = $auth->verifyIdToken($idToken);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Get Firebase UID
-        |--------------------------------------------------------------------------
-        */
-
+        // Get Firebase UID from the verified token
         $uid = $verifiedToken->claims()->get("sub");
+
+        // Get user name from database
+        global $conn;
+
+        $sql = "SELECT name FROM admins WHERE fbuid = ?";
+
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            throw new Exception("Database query preparation failed");
+        }
+
+        $stmt->bind_param("s", $uid);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+
+        $stmt->close();
+
+        if (!$user) {
+            http_response_code(404);
+
+            echo json_encode([
+                "error" => "User not found"
+            ]);
+
+            exit;
+        }
+
+        $name = $user["name"];
 
         return [
             "uid" => $uid,
+            "name" => $name,
             "token" => $verifiedToken
         ];
 
-    } catch (FailedToVerifyToken $e) {
+    }catch (FailedToVerifyToken $e) {
 
         error_log("Firebase token verification failed: " . $e->getMessage());
 

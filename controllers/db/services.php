@@ -1,5 +1,5 @@
 <?php
-include("../configs/connectDB.php");
+include(__DIR__."/../../configs/connectDB.php");
 
 function getAllServices() {
      

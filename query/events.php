@@ -12,7 +12,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all events data from db
 
-        $events =  getAllEvents(0,20);
+        $events =  getAllEvents(0,100);
 
         if(array_key_exists("error",$events)){
             http_response_code(404);
