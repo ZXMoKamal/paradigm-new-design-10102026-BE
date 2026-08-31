@@ -1,6 +1,6 @@
 <?php
-include ("../controllers/db/blog.php");
-include ("../controllers/storage/blog.php");
+include ("../controllers/db/blogs.php");
+include ("../controllers/storage/blogs.php");
 include ("../configs/header.php");
 
 

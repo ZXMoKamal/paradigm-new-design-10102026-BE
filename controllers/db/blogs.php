@@ -1,5 +1,5 @@
 <?php
-include("../configs/connectDB.php");
+include(__DIR__."/../../configs/connectDB.php");
 
 function getAllBlogs($from, $to) {
 
@@ -16,7 +16,7 @@ function getAllBlogs($from, $to) {
         return ["error" => "Invalid range"];
     }
 
-    $sql = $sql = "SELECT id, name, requestTitle FROM blog ORDER BY id DESC LIMIT ?, ?";
+    $sql = $sql = "SELECT id, name, requestTitle FROM blogs ORDER BY id DESC LIMIT ?, ?";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ii", $from, $limit);
@@ -42,7 +42,7 @@ function getBlog($requestTitle) {
 
     global $conn;
 
-    $sql = "SELECT id, name, content, requestTitle FROM blog WHERE requestTitle = ? LIMIT 1";
+    $sql = "SELECT id, name, content, requestTitle FROM blogs WHERE requestTitle = ? LIMIT 1";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $requestTitle);
@@ -58,4 +58,46 @@ function getBlog($requestTitle) {
     $data = $result->fetch_assoc();
 
     return $data;
+}
+
+
+function addBlog($name, $content, $requestTitle)
+{
+    global $conn;
+
+    $sql = "INSERT INTO blogs (name, content, requestTitle) VALUES (?, ?, ?)";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        error_log($conn->error);
+        return [
+            "error" => "Failed to prepare database query"
+        ];
+    }
+
+    $stmt->bind_param(
+        "sss",
+        $name,
+        $content,
+        $requestTitle
+    );
+
+    if (!$stmt->execute()) {
+        error_log($stmt->error);
+
+        $stmt->close();
+
+        return [
+            "error" => "Failed to create event"
+        ];
+    }
+
+    $blogtId = $conn->insert_id;
+
+    $stmt->close();
+
+    return [
+        "id" => $blogtId
+    ];
 }
