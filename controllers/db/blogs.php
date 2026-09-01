@@ -101,3 +101,80 @@ function addBlog($name, $content, $requestTitle)
         "id" => $blogtId
     ];
 }
+
+
+function deleteBlog($id)
+{
+    global $conn;
+
+    $id = (int)$id;
+
+    if ($id <= 0) {
+        return [
+            "error" => "Invalid blog ID"
+        ];
+    }
+
+    // Check if blog exists
+    $sql = "SELECT id FROM blogs WHERE id = ?";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare database query"
+        ];
+    }
+
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    if (!$result || $result->num_rows === 0) {
+
+        $stmt->close();
+
+        return [
+            "error" => "Blog not found"
+        ];
+    }
+
+    $stmt->close();
+
+
+    // Delete blog
+    $sql = "DELETE FROM blogs WHERE id = ?";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare delete query"
+        ];
+    }
+
+    $stmt->bind_param("i", $id);
+
+    if (!$stmt->execute()) {
+
+        error_log($stmt->error);
+
+        $stmt->close();
+
+        return [
+            "error" => "Failed to delete blog"
+        ];
+    }
+
+    $stmt->close();
+
+    return [
+        "success" => true,
+        "id" => $id
+    ];
+}
