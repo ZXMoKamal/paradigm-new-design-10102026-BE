@@ -347,7 +347,7 @@ function deleteEventStorage($eventId)
 
 
     // Delete directory recursively
-    if (!deleteDirectory($eventPath)) {
+    if (!deleteEventDirectory($eventPath)) {
 
         return [
             "error" => "Failed to delete event storage"
@@ -364,7 +364,7 @@ function deleteEventStorage($eventId)
 /**
  * Delete directory and all contents
  */
-function deleteDirectory($directory)
+function deleteEventDirectory($directory)
 {
     if (!is_dir($directory)) {
         return false;
@@ -396,7 +396,7 @@ function deleteDirectory($directory)
 
         if (is_dir($path)) {
 
-            if (!deleteDirectory($path)) {
+            if (!deleteEventDirectory($path)) {
                 return false;
             }
 

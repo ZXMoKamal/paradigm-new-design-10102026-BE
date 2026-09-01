@@ -280,7 +280,7 @@ function deleteBlogStorage($blogId)
 
 
     // Delete directory recursively
-    if (!deleteDirectory($blogPath)) {
+    if (!deleteBlogDirectory($blogPath)) {
 
         return [
             "error" => "Failed to delete blog storage"
@@ -297,7 +297,7 @@ function deleteBlogStorage($blogId)
 /**
  * Delete directory and all contents
  */
-function deleteDirectory($directory)
+function deleteBlogDirectory($directory)
 {
     if (!is_dir($directory)) {
         return false;
@@ -329,7 +329,7 @@ function deleteDirectory($directory)
 
         if (is_dir($path)) {
 
-            if (!deleteDirectory($path)) {
+            if (!deleteBlogDirectory($path)) {
                 return false;
             }
 
