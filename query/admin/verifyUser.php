@@ -2,7 +2,7 @@
 
 include ("../../configs/header.php");
 include("../../controllers/auth/auth.php");
-
+include ("../../captcha/verifyCaptcha.php");
 
 // Read JSON body
 $input = json_decode(file_get_contents("php://input"), true);
@@ -20,7 +20,7 @@ if (empty($captchaToken)) {
     exit;
 }
 
-if(!verifyCaptcha($captcha)){
+if(!verifyCaptcha($captchaToken)){
     http_response_code(403);
     echo json_encode(["error" => "Captcha verification failed"]);
     exit;
