@@ -2,6 +2,7 @@
     include(__DIR__."/../../configs/connectDB.php");
     include(__DIR__."/../../enc/enc_dec.php");
     include(__DIR__."/services.php");
+    require_once(__DIR__."/getAdmins.php");
 
     function setContactUs( $name, $email, $phone, $subject, $service, $serviceName, $message, $adminMailStatus, $customerMailStatus) {
         global $conn;
@@ -36,7 +37,7 @@
 
 
 
- function getAllContactUs($from, $to)
+function getAllContactUs($from, $to, $search = null)
 {
     global $conn;
 
@@ -62,7 +63,9 @@
                 serviceName,
                 message,
                 adminMailStatus,
-                customerMailStatus
+                customerMailStatus,
+                createdOn,
+                createdBy
             FROM contactUs
             ORDER BY id DESC
             LIMIT ?, ?";
@@ -95,9 +98,7 @@
 
     $stmt->close();
 
-    // Decode/decrypt contact data + get service name
-
-
+    // Decode/decrypt contact data
     foreach ($data as &$row) {
 
         $row["name"] = decryptData($row["name"]);
@@ -107,9 +108,54 @@
         $row["serviceName"] = decryptData($row["serviceName"]);
         $row["subject"] = decryptData($row["subject"]);
         $row["message"] = decryptData($row["message"]);
+        $row["createdOn"] = $row["createdOn"];
+        $row["createdBy"] = getUserNamefromDB($row["createdBy"]);
     }
 
     unset($row);
+
+
+    // Search after decrypting
+    if ($search !== null && $search !== "") {
+
+        $search = strtolower($search);
+
+        $data = array_filter($data, function ($row) use ($search) {
+
+            $fields = [
+                $row["id"],
+                $row["name"],
+                $row["serviceName"],
+                $row["email"],
+                $row["phone"],
+                $row["subject"],
+                $row["message"],
+                $row["adminMailStatus"],
+                $row["customerMailStatus"],
+                $row["createdOn"],
+                $row["createdBy"]
+            ];
+
+            foreach ($fields as $field) {
+
+                if (stripos((string)$field, $search) !== false) {
+                    return true;
+                }
+
+            }
+
+            return false;
+        });
+
+        // Reset array indexes
+        $data = array_values($data);
+    }
+
+
+    // If search was provided but nothing matched
+    if ($search !== null && count($data) === 0) {
+        return [];
+    }
 
     return $data;
 }

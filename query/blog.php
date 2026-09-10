@@ -2,9 +2,19 @@
 include ("../controllers/db/blogs.php");
 include ("../controllers/storage/blogs.php");
 include ("../configs/header.php");
-
+require_once("../controllers/auth/auth.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
+
+    $user = verifyFirebaseToken(false);
+
+    $isAdmin = false;
+    $userId = null;
+
+    if ($user && $user["admin"] === true) {
+        $isAdmin = true;
+        // $userId = $user["id"];
+    }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
 
@@ -12,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all blog data from db
 
-        $blogs =  getAllBlogs(0,20);
+        $blogs =  getAllBlogs(0,20,$isAdmin);
 
         if(array_key_exists("error",$blogs)){
             http_response_code(404);
@@ -40,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$get blog data from db for requestTitle 
 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $blogs =  getBlog($requestTitle);
+        $blogs =  getBlog($requestTitle,$isAdmin);
 
         if(array_key_exists("error",$blogs)){
             http_response_code(404);

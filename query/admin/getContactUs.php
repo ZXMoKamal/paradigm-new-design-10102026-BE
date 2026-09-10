@@ -9,18 +9,32 @@ require_once("../../controllers/db/contactUs.php");
 $user = verifyFirebaseToken();
 
 // // Check admin
-// if (!$user["admin"]) {
-//     http_response_code(403);
+if (!$user["admin"]) {
+    http_response_code(403);
 
-//     echo json_encode([
-//         "error" => "Admin access required"
-//     ]);
+    echo json_encode([
+        "error" => "Admin access required"
+    ]);
 
-//     exit;
-// }
+    exit;
+}
 
-// Get contacts
-$contacts = getAllContactUs(0,100);
+
+// Check if search parameter exists
+if (isset($_GET["search"])) {
+
+    $search = trim($_GET["search"]);
+
+    // Get all contacts for searching
+    $contacts = getAllContactUs(0, 1000000, $search);
+
+} else {
+
+    // No search parameter -> keep your existing behavior
+    $contacts = getAllContactUs(0, 100);
+
+}
+
 
 if (array_key_exists("error", $contacts)) {
 
@@ -37,3 +51,7 @@ echo json_encode(
     $contacts,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
 );
+
+
+
+

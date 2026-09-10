@@ -1,96 +1,238 @@
 <?php
 include(__DIR__."/../../configs/connectDB.php");
-
-function getAllServices() {
-     
+    require_once(__DIR__."/getAdmins.php");
+    
+function getAllServices($isAdmin = false)
+{
     global $conn;
 
-    $sql = "SELECT id, title, description, icon_code, requestTitle FROM services";
+    /*
+     * Public users
+     */
+    if (!$isAdmin) {
+
+        $sql = "SELECT 
+                    id,
+                    title,
+                    description,
+                    icon_code,
+                    requestTitle
+                FROM services";
+
+    }
+
+
+    /*
+     * Admin users
+     */
+    else {
+
+        $sql = "SELECT 
+                    id,
+                    title,
+                    description,
+                    icon_code,
+                    requestTitle,
+                    createdOn,
+                    createdBy
+                FROM services";
+    }
+
+
     $result = $conn->query($sql);
 
-    $data = [];
-
-    if(!$result||$result->num_rows == null){
-        $data = ["error" => "No data found"];
-    }
-    else if ($result->num_rows > 0) {
-        $data = $result->fetch_all(MYSQLI_ASSOC);
-    }
-
-    return $data;
-}
-
-
-function getService($requestTitle) {
-
-    global $conn;
-
-    $sql = "
-        SELECT 
-            s.id, 
-            s.title, 
-            s.description,
-            s.icon_code,
-            s.requestTitle,
-            CONCAT(
-                '[',
-                IFNULL(
-                    GROUP_CONCAT(
-                        CONCAT(
-                            '{\"id\":', p.id, 
-                            ',\"point\":\"', REPLACE(p.point, '\"', '\\\\\"'), '\"}'
-                        )
-                    ),
-                    ''
-                ),
-                ']'
-            ) AS points
-        FROM services s
-        LEFT JOIN services_points p ON p.sid = s.id
-        WHERE s.requestTitle = ?
-        GROUP BY s.id
-    ";
-
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $requestTitle);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-
-    
-    // ❌ No data
     if (!$result || $result->num_rows == 0) {
         return ["error" => "No data found"];
     }
-        
-    $data = [];
 
-    // ✅ Fetch
-    $data = $result->fetch_assoc();
 
-    // 🔥 Convert JSON string → array
-    // foreach ($data as &$row) {
-        $data['points'] = json_decode($data['points'], true);
-    // }
+    $data = $result->fetch_all(MYSQLI_ASSOC);
+
+
+    /*
+     * Only admins can see creator information.
+     */
+    if ($isAdmin) {
+
+        foreach ($data as &$service) {
+
+            if ($service["createdBy"] !== null) {
+
+                $service["createdBy"] = getUserNamefromDB(
+                    (int)$service["createdBy"]
+                );
+            }
+        }
+
+        unset($service);
+    }
+
 
     return $data;
 }
 
-function getServiceById($id) {
-     
+
+function getService($requestTitle, $isAdmin = false)
+{
     global $conn;
 
-    $sql = "SELECT id, title FROM services where id =" . $id;
-    $result = $conn->query($sql);
 
-    $data = [];
+    /*
+     * Public users
+     */
+    if (!$isAdmin) {
 
-    if(!$result||$result->num_rows == null){
-        $data = ["error" => "No data found"];
+        $sql = "
+            SELECT 
+                s.id, 
+                s.title, 
+                s.description,
+                s.icon_code,
+                s.requestTitle,
+                CONCAT(
+                    '[',
+                    IFNULL(
+                        GROUP_CONCAT(
+                            CONCAT(
+                                '{\"id\":', p.id, 
+                                ',\"point\":\"',
+                                REPLACE(p.point, '\"', '\\\\\"'),
+                                '\"}'
+                            )
+                        ),
+                        ''
+                    ),
+                    ']'
+                ) AS points
+            FROM services s
+            LEFT JOIN services_points p ON p.sid = s.id
+            WHERE s.requestTitle = ?
+            GROUP BY s.id
+        ";
+
     }
-    else if ($result->num_rows > 0) {
-        $data = $result->fetch_all(MYSQLI_ASSOC);
+
+
+    /*
+     * Admin users
+     */
+    else {
+
+        $sql = "
+            SELECT 
+                s.id, 
+                s.title, 
+                s.description,
+                s.icon_code,
+                s.requestTitle,
+                s.createdOn,
+                s.createdBy,
+                CONCAT(
+                    '[',
+                    IFNULL(
+                        GROUP_CONCAT(
+                            CONCAT(
+                                '{\"id\":', p.id, 
+                                ',\"point\":\"',
+                                REPLACE(p.point, '\"', '\\\\\"'),
+                                '\"}'
+                            )
+                        ),
+                        ''
+                    ),
+                    ']'
+                ) AS points
+            FROM services s
+            LEFT JOIN services_points p ON p.sid = s.id
+            WHERE s.requestTitle = ?
+            GROUP BY s.id
+        ";
     }
+
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        return ["error" => "Failed to prepare query"];
+    }
+
+    $stmt->bind_param("s", $requestTitle);
+
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["error" => "Failed to execute query"];
+    }
+
+    $result = $stmt->get_result();
+
+
+    if (!$result || $result->num_rows == 0) {
+        $stmt->close();
+        return ["error" => "No data found"];
+    }
+
+
+    // Fetch service
+    $data = $result->fetch_assoc();
+
+
+    /*
+     * Convert JSON string to array
+     */
+    $data["points"] = json_decode($data["points"], true);
+
+
+    /*
+     * Only admins can see creator information.
+     */
+    if ($isAdmin) {
+
+        if ($data["createdBy"] !== null) {
+
+            $data["createdBy"] = getUserNamefromDB(
+                (int)$data["createdBy"]
+            );
+        }
+    }
+
+
+    $stmt->close();
+
+    return $data;
+}
+
+
+function getServiceById($id)
+{
+    global $conn;
+
+    $sql = "SELECT id, title FROM services WHERE id = ?";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        return ["error" => "Failed to prepare query"];
+    }
+
+    $id = (int)$id;
+
+    $stmt->bind_param("i", $id);
+
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return ["error" => "Failed to execute query"];
+    }
+
+    $result = $stmt->get_result();
+
+    if (!$result || $result->num_rows == 0) {
+        $stmt->close();
+        return ["error" => "No data found"];
+    }
+
+    $data = $result->fetch_all(MYSQLI_ASSOC);
+
+    $stmt->close();
 
     return $data;
 }

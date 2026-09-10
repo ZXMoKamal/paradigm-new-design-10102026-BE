@@ -4,7 +4,7 @@ require_once __DIR__ . "/../../configs/firebase.php";
 
 use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
 
-function verifyFirebaseToken() {
+function verifyFirebaseToken($required = true) {
 
     global $auth;
 
@@ -13,7 +13,9 @@ function verifyFirebaseToken() {
     $authorization = $headers["Authorization"] ?? "";
 
     if (!$authorization) {
-
+        if (!$required) {
+            return null;
+        }
         http_response_code(401);
 
         echo json_encode([
@@ -55,10 +57,13 @@ function verifyFirebaseToken() {
         // Get Firebase UID from the verified token
         $uid = $verifiedToken->claims()->get("sub");
 
+        // Get admin status from Firebase Custom Claims
+        $admin = $verifiedToken->claims()->get("admin", false);
+
         // Get user name from database
         global $conn;
 
-        $sql = "SELECT name FROM admins WHERE fbuid = ?";
+        $sql = "SELECT name, SupAdmin FROM admins WHERE fbuid = ?";
 
         $stmt = $conn->prepare($sql);
 
@@ -85,11 +90,14 @@ function verifyFirebaseToken() {
         }
 
         $name = $user["name"];
+        $supAdmin = $user["SupAdmin"];
 
         return [
             "uid" => $uid,
             "name" => $name,
-            "token" => $verifiedToken
+            "token" => $verifiedToken,
+            "supAdmin" => $supAdmin,
+            "admin" => $admin
         ];
 
     }catch (FailedToVerifyToken $e) {

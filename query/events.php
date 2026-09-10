@@ -2,9 +2,19 @@
 include ("../controllers/db/events.php");
 include ("../controllers/storage/events.php");
 include ("../configs/header.php");
-
+require_once("../controllers/auth/auth.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
+
+    $user = verifyFirebaseToken(false);
+
+    $isAdmin = false;
+    $userId = null;
+
+    if ($user && $user["admin"] === true) {
+        $isAdmin = true;
+        // $userId = $user["id"];
+    }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
 
@@ -12,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all events data from db
 
-        $events =  getAllEvents(0,100);
+        $events =  getAllEvents(0,100,$isAdmin);
 
         if(array_key_exists("error",$events)){
             http_response_code(404);
@@ -40,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$get event data from db for requestTitle 
 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $events =  getEvent($requestTitle);
+        $events =  getEvent($requestTitle,$isAdmin);
 
         if(array_key_exists("error",$events)){
             http_response_code(404);

@@ -1,9 +1,20 @@
 <?php
 include ("../controllers/db/services.php");
 include ("../configs/header.php");
+require_once("../controllers/auth/auth.php");
 
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
+
+    $user = verifyFirebaseToken(false);
+
+    $isAdmin = false;
+    $userId = null;
+
+    if ($user && $user["admin"] === true) {
+        $isAdmin = true;
+        // $userId = $user["id"];
+    }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
 
@@ -11,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all services data from db
 
-        $services =  getAllServices();
+        $services =  getAllServices($isAdmin);
 
 
     } else if($requestTitle) {
@@ -19,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$if string contain only digits
         //$get service data from db for id 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $services =  getService($requestTitle);
+        $services =  getService($requestTitle,$isAdmin);
 
     }
         

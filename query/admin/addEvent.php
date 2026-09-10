@@ -18,16 +18,16 @@ $user = verifyFirebaseToken();
 // 2. Check admin
 // ---------------------------------------------------------
 
-// if ($user["admin"] !== true) {
+if ($user["admin"] !== true) {
 
-//     http_response_code(403);
+    http_response_code(403);
 
-//     echo json_encode([
-//         "error" => "Admin access required"
-//     ]);
+    echo json_encode([
+        "error" => "Admin access required"
+    ]);
 
-//     exit;
-// }
+    exit;
+}
 
 
 // ---------------------------------------------------------
