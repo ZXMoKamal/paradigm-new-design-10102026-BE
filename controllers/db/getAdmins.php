@@ -1,5 +1,14 @@
 <?php
 function getUserNamefromDB($id) {
+
+    if (!is_numeric($id)) {
+        throw new Exception("Invalid ID");
+    }
+
+    if ($id == 88) {
+        return "automatic";
+    }
+    
 global $conn;
     $sql = "SELECT name FROM admins WHERE id = ?";
 

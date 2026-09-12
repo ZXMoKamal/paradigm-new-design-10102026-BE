@@ -18,10 +18,10 @@
 
 
         // ✅ Insert into DB
-        $sql = "INSERT INTO contactUs (name, email, phone, subject, service, serviceName, message, adminMailStatus, customerMailStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO contactUs (name, email, phone, subject, service, serviceName, message, adminMailStatus, customerMailStatus, createdOn, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssssii", $nameEncrypted, $emailEncrypted, $phoneEncrypted, $subjectEncrypted, $serviceEncrypted, $serviceNameEncrypted, $messageEncrypted, $adminMailStatus, $customerMailStatus);
+        $stmt->bind_param("sssssssiisi", $nameEncrypted, $emailEncrypted, $phoneEncrypted, $subjectEncrypted, $serviceEncrypted, $serviceNameEncrypted, $messageEncrypted, $adminMailStatus, $customerMailStatus, date("Y-m-d"), 88);
 
         if ($stmt->execute()) {
             $state = true;

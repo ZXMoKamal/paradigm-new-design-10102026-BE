@@ -243,26 +243,94 @@ function getBlog($requestTitle, $isAdmin = false)
 }
 
 
-function addBlog($name, $content, $requestTitle)
+function addBlog($name, $content, $requestTitle, $uid)
 {
     global $conn;
 
-    $sql = "INSERT INTO blogs (name, content, requestTitle) VALUES (?, ?, ?)";
+    /*
+     * Get admin database ID using Firebase UID
+     */
+    $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $createdBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+    /*
+     * Create date/time
+     */
+    $createdOn = date("Y-m-d");//H:i:s
+
+
+    /*
+     * Insert blog
+     */
+    $sql = "
+        INSERT INTO blogs (
+            name,
+            content,
+            requestTitle,
+            createdBy,
+            createdOn
+        )
+        VALUES (?, ?, ?, ?, ?)
+    ";
 
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
         error_log($conn->error);
+
         return [
             "error" => "Failed to prepare database query"
         ];
     }
 
     $stmt->bind_param(
-        "sss",
+        "sssis",
         $name,
         $content,
-        $requestTitle
+        $requestTitle,
+        $createdBy,
+        $createdOn
     );
 
     if (!$stmt->execute()) {
@@ -271,18 +339,62 @@ function addBlog($name, $content, $requestTitle)
         $stmt->close();
 
         return [
-            "error" => "Failed to create event"
+            "error" => "Failed to create blog"
         ];
     }
 
-    $blogtId = $conn->insert_id;
+    $blogId = $conn->insert_id;
 
     $stmt->close();
 
     return [
-        "id" => $blogtId
+        "id" => $blogId,
+        "createdBy" => $createdBy,
+        "createdOn" => $createdOn
     ];
 }
+
+
+// function addBlog($name, $content, $requestTitle,$uid)
+// {
+//     global $conn;
+
+//     $sql = "INSERT INTO blogs (name, content, requestTitle) VALUES (?, ?, ?)";
+
+//     $stmt = $conn->prepare($sql);
+
+//     if (!$stmt) {
+//         error_log($conn->error);
+//         return [
+//             "error" => "Failed to prepare database query"
+//         ];
+//     }
+
+//     $stmt->bind_param(
+//         "sss",
+//         $name,
+//         $content,
+//         $requestTitle
+//     );
+
+//     if (!$stmt->execute()) {
+//         error_log($stmt->error);
+
+//         $stmt->close();
+
+//         return [
+//             "error" => "Failed to create event"
+//         ];
+//     }
+
+//     $blogId = $conn->insert_id;
+
+//     $stmt->close();
+
+//     return [
+//         "id" => $blogId
+//     ];
+// }
 
 
 function deleteBlog($id)

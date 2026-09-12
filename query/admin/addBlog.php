@@ -119,7 +119,8 @@ if (
 $blog = addBlog(
     $name,
     $content,
-    $requestTitle
+    $requestTitle,
+    $user["uid"]
 );
 
 
