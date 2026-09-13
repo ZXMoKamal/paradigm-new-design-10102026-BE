@@ -238,14 +238,65 @@ function getServiceById($id)
 }
 
 
-function addService($title, $iconCode, $requestTitle)
+function addService($title, $iconCode, $requestTitle, $uid)
 {
     global $conn;
 
+
+
+            /*
+     * Get admin database ID using Firebase UID
+     */
+    $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $createdBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+
+
     $sql = "
         INSERT INTO services
-        (title, icon_code, requestTitle)
-        VALUES (?, ?, ?)
+        (title, icon_code, requestTitle, createdOn, createdBy)
+        VALUES (?, ?, ?,?,?)
     ";
 
     $stmt = $conn->prepare($sql);
@@ -260,10 +311,12 @@ function addService($title, $iconCode, $requestTitle)
     }
 
     $stmt->bind_param(
-        "sss",
+        "ssssi",
         $title,
         $iconCode,
-        $requestTitle
+        $requestTitle,
+        date("Y-m-d"),
+        $createdBy
     );
 
     if (!$stmt->execute()) {

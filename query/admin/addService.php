@@ -166,7 +166,8 @@ $serviceId = $service["id"];
 
 $highlightResult = addServiceHighlights(
     $serviceId,
-    $highlights
+    $highlights,
+    $user["uid"]
 );
 
 

@@ -1,7 +1,7 @@
 <?php
     include(__DIR__."/../../configs/connectDB.php");
     include(__DIR__."/../../enc/enc_dec.php");
-    include(__DIR__."/services.php");
+    include_once(__DIR__."/services.php");
     require_once(__DIR__."/getAdmins.php");
 
     function setContactUs( $name, $email, $phone, $subject, $service, $serviceName, $message, $adminMailStatus, $customerMailStatus) {

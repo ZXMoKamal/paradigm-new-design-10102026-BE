@@ -180,7 +180,8 @@ $event = addEvent(
     $client,
     $location,
     $date,
-    $requestTitle
+    $requestTitle,
+    $user["uid"]
 );
 
 

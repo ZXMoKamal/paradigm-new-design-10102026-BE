@@ -246,11 +246,62 @@ function getEvent($requestTitle, $isAdmin = false)
 
 
 
-function addEvent($name, $description, $client, $location, $date, $requestTitle)
+function addEvent($name, $description, $client, $location, $date, $requestTitle,$uid)
 {
     global $conn;
 
-    $sql = "INSERT INTO events (name, description, client, location, date, requestTitle) VALUES (?, ?, ?, ?, ?, ?)";
+        /*
+     * Get admin database ID using Firebase UID
+     */
+    $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $createdBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+
+
+
+
+    $sql = "INSERT INTO events (name, description, client, location, date, requestTitle, createdOn, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
 
@@ -262,13 +313,15 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle)
     }
 
     $stmt->bind_param(
-        "ssssss",
+        "sssssssi",
         $name,
         $description,
         $client,
         $location,
         $date,
-        $requestTitle
+        $requestTitle,
+        date("Y-m-d"),
+        $createdBy
     );
 
     if (!$stmt->execute()) {
