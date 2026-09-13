@@ -1,7 +1,7 @@
 <?php
     include(__DIR__."/../../configs/connectDB.php");
     include(__DIR__."/../../enc/enc_dec.php");
-    include_once(__DIR__."/services.php");
+    // include_once(__DIR__."/services.php");
     require_once(__DIR__."/getAdmins.php");
 
     function setContactUs( $name, $email, $phone, $subject, $service, $serviceName, $message, $adminMailStatus, $customerMailStatus) {
@@ -15,13 +15,14 @@
         $serviceEncrypted = encryptData($service);
         $serviceNameEncrypted = encryptData($serviceName);
 
-
+    $createdOn = date("Y-m-d");
+    $createdBy = 88; // automatic
 
         // ✅ Insert into DB
         $sql = "INSERT INTO contactUs (name, email, phone, subject, service, serviceName, message, adminMailStatus, customerMailStatus, createdOn, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssssiisi", $nameEncrypted, $emailEncrypted, $phoneEncrypted, $subjectEncrypted, $serviceEncrypted, $serviceNameEncrypted, $messageEncrypted, $adminMailStatus, $customerMailStatus, date("Y-m-d"), 88);
+        $stmt->bind_param("sssssssiisi", $nameEncrypted, $emailEncrypted, $phoneEncrypted, $subjectEncrypted, $serviceEncrypted, $serviceNameEncrypted, $messageEncrypted, $adminMailStatus, $customerMailStatus, $createdOn, $createdBy);
 
         if ($stmt->execute()) {
             $state = true;

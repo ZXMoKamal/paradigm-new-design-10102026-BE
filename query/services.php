@@ -30,8 +30,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$if string contain only digits
         //$get service data from db for id 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $services =  getService($requestTitle,$isAdmin);
-
+        if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
+            $visitorId = htmlspecialchars($_GET["visitorId"]);
+            $services =  getService($requestTitle,$isAdmin,$visitorId);
+        }else{
+            $services =  getService($requestTitle,$isAdmin);
+        }
     }
         
     if(array_key_exists("error",$services)){

@@ -50,7 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$get event data from db for requestTitle 
 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $events =  getEvent($requestTitle,$isAdmin);
+
+        if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
+            $visitorId = htmlspecialchars($_GET["visitorId"]);
+            $events =  getEvent($requestTitle,$isAdmin,$visitorId);
+        }else{
+            $events =  getEvent($requestTitle,$isAdmin);
+        }
 
         if(array_key_exists("error",$events)){
             http_response_code(404);

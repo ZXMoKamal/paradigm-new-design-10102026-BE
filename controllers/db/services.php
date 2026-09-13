@@ -72,7 +72,7 @@ function getAllServices($isAdmin = false)
 }
 
 
-function getService($requestTitle, $isAdmin = false)
+function getService($requestTitle, $isAdmin = false, $visitorId = null)
 {
     global $conn;
 
@@ -198,6 +198,49 @@ function getService($requestTitle, $isAdmin = false)
 
     $stmt->close();
 
+    if ($visitorId !== null && trim($visitorId) !== "") {
+            $date = date("Y-m-d");
+
+        $sql = "
+            INSERT IGNORE INTO services_visits
+            (visitorId, serviceId, date)
+            VALUES (?, ?, ?)
+        ";
+
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare query"
+            ];
+        }
+
+        $stmt->bind_param(
+            "sis",
+            $visitorId,
+            $data["id"],
+            $date
+        );
+
+        if (!$stmt->execute()) {
+            error_log($stmt->error);
+
+            $stmt->close();
+
+            return [
+                "error" => "Failed to record service visit"
+            ];
+        }
+
+        $isNewVisit = $stmt->affected_rows === 1;
+
+        $stmt->close();
+    }
+
+
+
     return $data;
 }
 
@@ -290,7 +333,7 @@ function addService($title, $iconCode, $requestTitle, $uid)
 
     $adminStmt->close();
 
-
+$createdOn = date("Y-m-d");
 
 
     $sql = "
@@ -315,7 +358,7 @@ function addService($title, $iconCode, $requestTitle, $uid)
         $title,
         $iconCode,
         $requestTitle,
-        date("Y-m-d"),
+        $createdOn,
         $createdBy
     );
 
@@ -340,11 +383,11 @@ function addService($title, $iconCode, $requestTitle, $uid)
 }
 
 
-function addServiceHighlights($serviceId, $highlights)
+function addServiceHighlights($serviceId, $highlights, $uid)
 {
     global $conn;
 
-    $sql = "INSERT INTO services_points (sid, point) VALUES (?, ?)";
+    $sql = "INSERT INTO services_points (sid, point, createdBy, createdOn) VALUES (?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
 
@@ -357,6 +400,58 @@ function addServiceHighlights($serviceId, $highlights)
         ];
     }
 
+
+   /*
+     * Get admin database ID using Firebase UID
+     */
+    $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $createdBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+
+
+    $createdOn = date("Y-m-d"); 
+
     foreach ($highlights as $point) {
 
         $point = trim($point);
@@ -367,9 +462,11 @@ function addServiceHighlights($serviceId, $highlights)
         }
 
         $stmt->bind_param(
-            "is",
+            "isis",
             $serviceId,
-            $point
+            $point,
+            $createdBy,
+            $createdOn
         );
 
         if (!$stmt->execute()) {

@@ -155,7 +155,7 @@ function getAllEvents($from, $to, $isAdmin = false)
 //     return $data;
 // }
 
-function getEvent($requestTitle, $isAdmin = false)
+function getEvent($requestTitle, $isAdmin = false, $visitorId = null)
 {
     global $conn;
 
@@ -241,6 +241,49 @@ function getEvent($requestTitle, $isAdmin = false)
 
     $stmt->close();
 
+
+        if ($visitorId !== null && trim($visitorId) !== "") {
+            $date = date("Y-m-d");
+
+        $sql = "
+            INSERT IGNORE INTO events_visits
+            (visitorId, eventId, date)
+            VALUES (?, ?, ?)
+        ";
+
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare query"
+            ];
+        }
+
+        $stmt->bind_param(
+            "sis",
+            $visitorId,
+            $data["id"],
+            $date
+        );
+
+        if (!$stmt->execute()) {
+            error_log($stmt->error);
+
+            $stmt->close();
+
+            return [
+                "error" => "Failed to record event visit"
+            ];
+        }
+
+        $isNewVisit = $stmt->affected_rows === 1;
+
+        $stmt->close();
+    }
+
+
     return $data;
 }
 
@@ -296,6 +339,8 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
 
     $adminStmt->close();
 
+    $createdOn = date("Y-m-d");
+
 
 
 
@@ -320,7 +365,7 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
         $location,
         $date,
         $requestTitle,
-        date("Y-m-d"),
+        $createdOn,
         $createdBy
     );
 

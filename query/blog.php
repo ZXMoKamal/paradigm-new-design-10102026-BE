@@ -50,7 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //$get blog data from db for requestTitle 
 
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
-        $blogs =  getBlog($requestTitle,$isAdmin);
+
+        if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
+            $visitorId = htmlspecialchars($_GET["visitorId"]);
+            $blogs =  getBlog($requestTitle,$isAdmin,$visitorId);
+        }else{
+            $blogs =  getBlog($requestTitle,$isAdmin);
+        }
 
         if(array_key_exists("error",$blogs)){
             http_response_code(404);

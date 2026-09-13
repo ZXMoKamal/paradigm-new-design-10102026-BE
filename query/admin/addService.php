@@ -143,7 +143,8 @@ if (!is_array($highlights)) {
 $service = addService(
     $title,
     $iconCode,
-    $requestTitle
+    $requestTitle,
+    $user["uid"]
 );
 
 
