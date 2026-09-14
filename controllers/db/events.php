@@ -287,6 +287,138 @@ function getEvent($requestTitle, $isAdmin = false, $visitorId = null)
     return $data;
 }
 
+function getEventById($eventId, $isAdmin = false, $visitorId = null)
+{
+    global $conn;
+
+
+    /*
+     * Public users
+     */
+    if (!$isAdmin) {
+
+        $sql = "SELECT 
+                    id,
+                    name,
+                    description,
+                    client,
+                    location,
+                    date,
+                    requestTitle
+                FROM events
+                WHERE id = ?
+                LIMIT 1";
+
+    }
+
+
+    /*
+     * Admin users
+     */
+    else {
+
+        $sql = "SELECT 
+                    id,
+                    name,
+                    description,
+                    client,
+                    location,
+                    date,
+                    requestTitle,
+                    createdOn,
+                    createdBy
+                FROM events
+                WHERE id = ?
+                LIMIT 1";
+    }
+
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        return ["error" => "Failed to prepare query"];
+    }
+
+    $stmt->bind_param("s", $eventId);
+
+    if (!$stmt->execute()) {
+        return ["error" => "Failed to execute query"];
+    }
+
+    $result = $stmt->get_result();
+
+
+    if (!$result || $result->num_rows == 0) {
+        return ["error" => "No data found"];
+    }
+
+
+    // Fetch single row
+    $data = $result->fetch_assoc();
+
+
+    /*
+     * Only admins can see creator information.
+     */
+    if ($isAdmin) {
+
+        if ($data["createdBy"] !== null) {
+
+            $data["createdBy"] = getUserNamefromDB(
+                (int)$data["createdBy"]
+            );
+        }
+    }
+
+
+    $stmt->close();
+
+
+        if ($visitorId !== null && trim($visitorId) !== "") {
+            $date = date("Y-m-d");
+
+        $sql = "
+            INSERT IGNORE INTO events_visits
+            (visitorId, eventId, date)
+            VALUES (?, ?, ?)
+        ";
+
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare query"
+            ];
+        }
+
+        $stmt->bind_param(
+            "sis",
+            $visitorId,
+            $data["id"],
+            $date
+        );
+
+        if (!$stmt->execute()) {
+            error_log($stmt->error);
+
+            $stmt->close();
+
+            return [
+                "error" => "Failed to record event visit"
+            ];
+        }
+
+        $isNewVisit = $stmt->affected_rows === 1;
+
+        $stmt->close();
+    }
+
+
+    return $data;
+}
+
 
 
 function addEvent($name, $description, $client, $location, $date, $requestTitle,$uid)
@@ -388,7 +520,162 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
     ];
 }
 
+function updateEvent(
+    $eventId,
+    $name,
+    $description,
+    $client,
+    $location,
+    $date,
+    // $requestTitle,
+    $uid
+) {
+    global $conn;
 
+
+    // ---------------------------------------------------------
+    // Get admin database ID using Firebase UID
+    // ---------------------------------------------------------
+
+    $adminSql = "
+        SELECT id
+        FROM admins
+        WHERE fbuid = ?
+        LIMIT 1
+    ";
+
+
+    $adminStmt = $conn->prepare($adminSql);
+
+
+    if (!$adminStmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+
+    if (!$adminStmt->execute()) {
+
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+
+    $adminResult =
+        $adminStmt->get_result();
+
+
+    if ($adminResult->num_rows === 0) {
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+
+    $admin =
+        $adminResult->fetch_assoc();
+
+
+    $lastUpdateBy =
+        $admin["id"];
+
+
+    $adminStmt->close();
+
+
+    // ---------------------------------------------------------
+    // Last update date
+    // ---------------------------------------------------------
+
+    $lastUpdateOn =
+        date("Y-m-d");
+
+
+    // ---------------------------------------------------------
+    // Update event
+    // ---------------------------------------------------------
+
+    $sql = "
+        UPDATE events
+        SET
+            name = ?,
+            description = ?,
+            client = ?,
+            location = ?,
+            date = ?,
+            lastUpdateOn = ?,
+            lastUpdateBy = ?
+        WHERE id = ?
+    ";
+
+
+    $stmt = $conn->prepare($sql);
+
+
+    if (!$stmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare update query"
+        ];
+    }
+
+
+    $stmt->bind_param(
+        "ssssssii",
+        $name,
+        $description,
+        $client,
+        $location,
+        $date,
+        $lastUpdateOn,
+        $lastUpdateBy,
+        $eventId
+    );
+
+
+    if (!$stmt->execute()) {
+
+        error_log($stmt->error);
+
+        $stmt->close();
+
+        return [
+            "error" => "Failed to update event"
+        ];
+    }
+
+
+    $stmt->close();
+
+
+    return [
+        "id" => $eventId,
+
+        "lastUpdateBy" => $lastUpdateBy,
+
+        "lastUpdateOn" => $lastUpdateOn
+    ];
+}
 
 
 function deleteEvent($id)
