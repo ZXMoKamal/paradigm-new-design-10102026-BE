@@ -75,7 +75,200 @@ function getBlogThumb($id) {
 //     return $images;
 // }
 
+function updateBlogImages($blogId, $newThumb)
+{
+    $allowedExtensions = [
+        "jpg",
+        "jpeg",
+        "png",
+        "webp"
+    ];
 
+    $allowedMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+
+    // ---------------------------------------------------------
+    // Blog storage paths
+    // ---------------------------------------------------------
+
+    $storagePath =
+        __DIR__ .
+        DIRECTORY_SEPARATOR .
+        ".." .
+        DIRECTORY_SEPARATOR .
+        ".." .
+        DIRECTORY_SEPARATOR .
+        "storage" .
+        DIRECTORY_SEPARATOR .
+        "images" .
+        DIRECTORY_SEPARATOR .
+        "blog" .
+        DIRECTORY_SEPARATOR .
+        $blogId;
+
+
+    $thumbPath =
+        $storagePath .
+        DIRECTORY_SEPARATOR .
+        "thumb";
+
+
+    // ---------------------------------------------------------
+    // Make sure directories exist
+    // ---------------------------------------------------------
+
+    if (!is_dir($storagePath)) {
+
+        if (!mkdir($storagePath, 0755, true)) {
+
+            return [
+                "error" => "Failed to create blog storage directory"
+            ];
+        }
+    }
+
+
+    if (!is_dir($thumbPath)) {
+
+        if (!mkdir($thumbPath, 0755, true)) {
+
+            return [
+                "error" => "Failed to create thumbnail directory"
+            ];
+        }
+    }
+
+
+    // ---------------------------------------------------------
+    // Find current thumbnail
+    // ---------------------------------------------------------
+
+    $currentThumbs = glob(
+        $thumbPath .
+        DIRECTORY_SEPARATOR .
+        "thumb.*"
+    );
+
+
+    // ---------------------------------------------------------
+    // No new thumbnail
+    // ---------------------------------------------------------
+    //
+    // Keep the existing thumbnail.
+    //
+
+    if ($newThumb === null) {
+
+        if (!empty($currentThumbs)) {
+
+            $currentThumb = basename($currentThumbs[0]);
+
+            return [
+                "thumbnail" => $currentThumb
+            ];
+        }
+
+
+        // No old thumbnail exists either
+
+        return [
+            "thumbnail" => null
+        ];
+    }
+
+
+    // ---------------------------------------------------------
+    // Validate new thumbnail
+    // ---------------------------------------------------------
+
+    $thumbExtension = strtolower(
+        pathinfo(
+            $newThumb["name"],
+            PATHINFO_EXTENSION
+        )
+    );
+
+
+    $thumbMime = mime_content_type(
+        $newThumb["tmp_name"]
+    );
+
+
+    if (
+        !in_array(
+            $thumbExtension,
+            $allowedExtensions,
+            true
+        ) ||
+        !in_array(
+            $thumbMime,
+            $allowedMimeTypes,
+            true
+        )
+    ) {
+
+        return [
+            "error" => "Invalid thumbnail image type"
+        ];
+    }
+
+
+    // ---------------------------------------------------------
+    // Delete old thumbnail(s)
+    // ---------------------------------------------------------
+
+    foreach ($currentThumbs as $oldThumb) {
+
+        if (is_file($oldThumb)) {
+
+            if (!unlink($oldThumb)) {
+
+                return [
+                    "error" => "Failed to remove old thumbnail"
+                ];
+            }
+        }
+    }
+
+
+    // ---------------------------------------------------------
+    // Save new thumbnail
+    // ---------------------------------------------------------
+
+    $thumbFileName =
+        "thumb." .
+        $thumbExtension;
+
+
+    $thumbDestination =
+        $thumbPath .
+        DIRECTORY_SEPARATOR .
+        $thumbFileName;
+
+
+    if (!move_uploaded_file(
+        $newThumb["tmp_name"],
+        $thumbDestination
+    )) {
+
+        return [
+            "error" => "Failed to save new thumbnail"
+        ];
+    }
+
+
+    // ---------------------------------------------------------
+    // Return thumbnail
+    // ---------------------------------------------------------
+
+    return [
+        "thumbnail" => $thumbFileName
+    ];
+}
 
 
 function saveBlogImages($blogId, $thumb){

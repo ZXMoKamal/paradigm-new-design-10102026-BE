@@ -34,7 +34,9 @@ function getAllServices($isAdmin = false)
                     icon_code,
                     requestTitle,
                     createdOn,
-                    createdBy
+                    createdBy,
+                    lastUpdateOn,
+                    lastUpdateBy
                 FROM services";
     }
 
@@ -60,6 +62,12 @@ function getAllServices($isAdmin = false)
 
                 $service["createdBy"] = getUserNamefromDB(
                     (int)$service["createdBy"]
+                );
+            }
+            if ($service["lastUpdateBy"] !== null) {
+
+                $service["lastUpdateBy"] = getUserNamefromDB(
+                    (int)$service["lastUpdateBy"]
                 );
             }
         }
@@ -330,16 +338,18 @@ function addService($title, $iconCode, $requestTitle, $uid)
     $admin = $adminResult->fetch_assoc();
 
     $createdBy = $admin["id"];
+    $lastUpdateBy = $admin["id"];
 
     $adminStmt->close();
 
-$createdOn = date("Y-m-d");
+    $createdOn = date("Y-m-d");
+    $lastUpdateOn = date("Y-m-d");
 
 
     $sql = "
         INSERT INTO services
-        (title, icon_code, requestTitle, createdOn, createdBy)
-        VALUES (?, ?, ?,?,?)
+        (title, icon_code, requestTitle, createdOn, createdBy, lastUpdateOn, lastUpdateBy)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ";
 
     $stmt = $conn->prepare($sql);
@@ -354,12 +364,14 @@ $createdOn = date("Y-m-d");
     }
 
     $stmt->bind_param(
-        "ssssi",
+        "ssssisi",
         $title,
         $iconCode,
         $requestTitle,
         $createdOn,
-        $createdBy
+        $createdBy,
+        $lastUpdateOn,
+        $lastUpdateBy
     );
 
     if (!$stmt->execute()) {
@@ -488,6 +500,311 @@ function addServiceHighlights($serviceId, $highlights, $uid)
     ];
 }
 
+function updateService(
+    $serviceId,
+    $title,
+    $iconCode,
+    // $requestTitle,
+    $uid
+) {
+    global $conn;
+
+
+    /*
+     * Get admin database ID using Firebase UID
+     */
+
+    $adminSql = "
+        SELECT id
+        FROM admins
+        WHERE fbuid = ?
+        LIMIT 1
+    ";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $lastUpdateBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+    /*
+     * Current date
+     */
+
+    $lastUpdateOn = date("Y-m-d");
+
+
+    /*
+     * Update service
+     */
+
+    $sql = "
+        UPDATE services
+        SET
+            title = ?,
+            icon_code = ?,
+  
+            lastUpdateOn = ?,
+            lastUpdateBy = ?
+        WHERE id = ?
+    ";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare service update query"
+        ];
+    }
+
+    $stmt->bind_param(
+        "sssii",
+        $title,
+        $iconCode,
+
+        $lastUpdateOn,
+        $lastUpdateBy,
+        $serviceId
+    );
+
+    if (!$stmt->execute()) {
+
+        error_log($stmt->error);
+
+        $stmt->close();
+
+        return [
+            "error" => "Failed to update service"
+        ];
+    }
+
+    $stmt->close();
+
+
+    return [
+        "id" => $serviceId,
+        "lastUpdateBy" => $lastUpdateBy,
+        "lastUpdateOn" => $lastUpdateOn
+    ];
+}
+
+
+function updateServiceHighlights(
+    $serviceId,
+    $highlights,
+    $uid
+) {
+    global $conn;
+
+
+    /*
+     * Get admin database ID using Firebase UID
+     */
+
+    $adminSql = "
+        SELECT id
+        FROM admins
+        WHERE fbuid = ?
+        LIMIT 1
+    ";
+
+    $adminStmt = $conn->prepare($adminSql);
+
+    if (!$adminStmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare admin query"
+        ];
+    }
+
+    $adminStmt->bind_param(
+        "s",
+        $uid
+    );
+
+    if (!$adminStmt->execute()) {
+
+        error_log($adminStmt->error);
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Failed to find admin"
+        ];
+    }
+
+    $adminResult = $adminStmt->get_result();
+
+    if ($adminResult->num_rows === 0) {
+
+        $adminStmt->close();
+
+        return [
+            "error" => "Admin not found"
+        ];
+    }
+
+    $admin = $adminResult->fetch_assoc();
+
+    $lastUpdateBy = $admin["id"];
+
+    $adminStmt->close();
+
+
+    /*
+     * Delete existing highlights
+     */
+
+    $deleteSql = "
+        DELETE FROM services_points
+        WHERE sid = ?
+    ";
+
+    $deleteStmt = $conn->prepare($deleteSql);
+
+    if (!$deleteStmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare highlight delete query"
+        ];
+    }
+
+    $deleteStmt->bind_param(
+        "i",
+        $serviceId
+    );
+
+    if (!$deleteStmt->execute()) {
+
+        error_log($deleteStmt->error);
+
+        $deleteStmt->close();
+
+        return [
+            "error" => "Failed to delete old service highlights"
+        ];
+    }
+
+    $deleteStmt->close();
+
+
+    /*
+     * Prepare insert query
+     */
+
+    $insertSql = "
+        INSERT INTO services_points
+        (
+            sid,
+            point,
+            createdBy,
+            createdOn
+        )
+        VALUES (?, ?, ?, ?)
+    ";
+
+    $insertStmt = $conn->prepare($insertSql);
+
+    if (!$insertStmt) {
+
+        error_log($conn->error);
+
+        return [
+            "error" => "Failed to prepare highlight insert query"
+        ];
+    }
+
+
+    $createdOn = date("Y-m-d");
+
+
+    /*
+     * Insert new highlights
+     */
+
+    foreach ($highlights as $point) {
+
+        $point = trim($point);
+
+        // Skip empty highlights
+        if ($point === "") {
+            continue;
+        }
+
+        $insertStmt->bind_param(
+            "isis",
+            $serviceId,
+            $point,
+            $lastUpdateBy,
+            $createdOn
+        );
+
+        if (!$insertStmt->execute()) {
+
+            error_log($insertStmt->error);
+
+            $insertStmt->close();
+
+            return [
+                "error" => "Failed to save service highlight"
+            ];
+        }
+    }
+
+
+    $insertStmt->close();
+
+
+    return [
+        "success" => true
+    ];
+}
 
 
 function deleteService($id)

@@ -78,7 +78,9 @@ function getAllEvents($from, $to, $isAdmin = false)
                     name,
                     requestTitle,
                     createdOn,
-                    createdBy
+                    createdBy,
+                    lastUpdateOn,
+                    lastUpdateBy
                 FROM events
                 ORDER BY id DESC
                 LIMIT ?, ?";
@@ -119,6 +121,12 @@ function getAllEvents($from, $to, $isAdmin = false)
 
                 $event["createdBy"] = getUserNamefromDB(
                     (int)$event["createdBy"]
+                );
+            }
+            if ($event["lastUpdateBy"] !== null) {
+
+                $event["lastUpdateBy"] = getUserNamefromDB(
+                    (int)$event["lastUpdateBy"]
                 );
             }
         }
@@ -468,17 +476,19 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
     $admin = $adminResult->fetch_assoc();
 
     $createdBy = $admin["id"];
+    $lastUpdateBy = $admin["id"];
 
     $adminStmt->close();
 
     $createdOn = date("Y-m-d");
+    $lastUpdateOn = date("Y-m-d");
 
 
 
 
 
 
-    $sql = "INSERT INTO events (name, description, client, location, date, requestTitle, createdOn, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO events (name, description, client, location, date, requestTitle, createdOn, createdBy, lastUpdateOn, lastUpdateBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
 
@@ -490,7 +500,7 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
     }
 
     $stmt->bind_param(
-        "sssssssi",
+        "sssssssisi",
         $name,
         $description,
         $client,
@@ -498,7 +508,9 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
         $date,
         $requestTitle,
         $createdOn,
-        $createdBy
+        $createdBy,
+        $lastUpdateOn,
+        $lastUpdateBy,
     );
 
     if (!$stmt->execute()) {
