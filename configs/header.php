@@ -5,7 +5,7 @@ $config = require __DIR__ . "/../../../../../configs/paradigm-config.php";
     header('Content-Type: application/json; charset=utf-8');
     header("Access-Control-Allow-Origin: ".$config["site_link"]);//. $_SERVER['HTTP_ORIGIN'] // *
     header("Access-Control-Allow-Credentials: true");
-    header("Access-Control-Allow-Methods: GET, Post, DELETE, OPTIONS");
+    header("Access-Control-Allow-Methods: GET, Post, PUT, DELETE, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
     // header("X-Content-Type-Options: nosniff");
