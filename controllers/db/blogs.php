@@ -1,70 +1,131 @@
 <?php
-include(__DIR__."/../../configs/connectDB.php");
+    include(__DIR__."/../../configs/connectDB.php");
     require_once(__DIR__."/getAdmins.php");
-
-    
-// function getAllBlogs($from, $to) {
-
-//     global $conn;
-
-//     // Valnameate inputs
-//     $from = (int)$from;
-//     $to = (int)$to;
-
-//     $limit = $to - $from;
-
-//     if ($limit <= 0) {
-//         // http_response_code(400);
-//         return ["error" => "Invalid range"];
-//     }
-
-//     $sql = $sql = "SELECT id, name, requestTitle FROM blogs ORDER BY id DESC LIMIT ?, ?";
-
-//     $stmt = $conn->prepare($sql);
-//     $stmt->bind_param("ii", $from, $limit);
-//     $stmt->execute();
-
-//     $result = $stmt->get_result();
-
-//     $data = [];
-
-//     if (!$result || $result->num_rows == 0) {
-//         // http_response_code(404);
-//         return ["error" => "No data found"];
-//     }
-
-//     // http_response_code(200);
-//     $data = $result->fetch_all(MYSQLI_ASSOC);
-
-//     return $data;
-// }
+    require_once(__DIR__."/ACL.php");
 
 
-// function getBlog($requestTitle) {
+#regon
+    // function getAllBlogs($from, $to) {
 
-//     global $conn;
+    //     global $conn;
 
-//     $sql = "SELECT id, name, content, requestTitle FROM blogs WHERE requestTitle = ? LIMIT 1";
+    //     // Valnameate inputs
+    //     $from = (int)$from;
+    //     $to = (int)$to;
 
-//     $stmt = $conn->prepare($sql);
-//     $stmt->bind_param("s", $requestTitle);
-//     $stmt->execute();
+    //     $limit = $to - $from;
 
-//     $result = $stmt->get_result();
+    //     if ($limit <= 0) {
+    //         // http_response_code(400);
+    //         return ["error" => "Invalid range"];
+    //     }
 
-//     if (!$result || $result->num_rows == 0) {
-//         return ["error" => "No data found"];
-//     }
+    //     $sql = $sql = "SELECT id, name, requestTitle FROM blogs ORDER BY id DESC LIMIT ?, ?";
 
-//     // Fetch single row
-//     $data = $result->fetch_assoc();
+    //     $stmt = $conn->prepare($sql);
+    //     $stmt->bind_param("ii", $from, $limit);
+    //     $stmt->execute();
 
-//     return $data;
-// }
+    //     $result = $stmt->get_result();
 
-function getAllBlogs($from, $to, $isAdmin = false)
+    //     $data = [];
+
+    //     if (!$result || $result->num_rows == 0) {
+    //         // http_response_code(404);
+    //         return ["error" => "No data found"];
+    //     }
+
+    //     // http_response_code(200);
+    //     $data = $result->fetch_all(MYSQLI_ASSOC);
+
+    //     return $data;
+    // }
+
+
+    // function getBlog($requestTitle) {
+
+    //     global $conn;
+
+    //     $sql = "SELECT id, name, content, requestTitle FROM blogs WHERE requestTitle = ? LIMIT 1";
+
+    //     $stmt = $conn->prepare($sql);
+    //     $stmt->bind_param("s", $requestTitle);
+    //     $stmt->execute();
+
+    //     $result = $stmt->get_result();
+
+    //     if (!$result || $result->num_rows == 0) {
+    //         return ["error" => "No data found"];
+    //     }
+
+    //     // Fetch single row
+    //     $data = $result->fetch_assoc();
+
+    //     return $data;
+    // }
+
+#end regon
+
+
+function getAllBlogs($from, $to, $isAdmin = false, $uid)
 {
     global $conn;
+
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for blog"
+            ]);
+
+            exit;
+
+        }
+    }
 
     // Validate inputs
     $from = (int)$from;
@@ -145,13 +206,13 @@ function getAllBlogs($from, $to, $isAdmin = false)
             if ($blog["createdBy"] !== null) {
 
                 $blog["createdBy"] = getUserNamefromDB(
-                    (int)$blog["createdBy"]
+                    (int)$blog["createdBy"],$uid
                 );
             }
             if ($blog["lastUpdateBy"] !== null) {
 
                 $blog["lastUpdateBy"] = getUserNamefromDB(
-                    (int)$blog["lastUpdateBy"]
+                    (int)$blog["lastUpdateBy"],$uid
                 );
             }
         }
@@ -166,9 +227,65 @@ function getAllBlogs($from, $to, $isAdmin = false)
 }
 
 
-function getBlog($requestTitle, $isAdmin = false, $visitorId = null)
+function getBlog($requestTitle, $isAdmin = false, $uid, $visitorId = null)
 {
     global $conn;
+
+        if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for blog"
+            ]);
+
+            exit;
+
+        }
+    }
 
 
     /*
@@ -239,7 +356,7 @@ function getBlog($requestTitle, $isAdmin = false, $visitorId = null)
         if ($data["createdBy"] !== null) {
 
             $data["createdBy"] = getUserNamefromDB(
-                (int)$data["createdBy"]
+                (int)$data["createdBy"],$uid
             );
         }
     }
@@ -298,10 +415,64 @@ function getBlog($requestTitle, $isAdmin = false, $visitorId = null)
     return $data;
 }
 
-function getBlogById($id, $isAdmin = false, $visitorId = null)
+function getBlogById($id, $isAdmin = false, $uid, $visitorId = null)
 {
     global $conn;
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
 
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult = checkAdminACL($admin["id"],"blog","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for blog"
+            ]);
+
+            exit;
+
+        }
+    }
 
     /*
      * Public users
@@ -371,7 +542,7 @@ function getBlogById($id, $isAdmin = false, $visitorId = null)
         if ($data["createdBy"] !== null) {
 
             $data["createdBy"] = getUserNamefromDB(
-                (int)$data["createdBy"]
+                (int)$data["createdBy"],$uid
             );
         }
     }
@@ -476,6 +647,18 @@ function addBlog($name, $content, $requestTitle, $uid)
     }
 
     $admin = $adminResult->fetch_assoc();
+            $ACLresult = checkAdminACL($admin["id"],"blog","create");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for blog"
+            ]);
+
+            exit;
+
+        }
 
     $createdBy = $admin["id"];
     $lastUpdateBy = $admin["id"];
@@ -547,47 +730,48 @@ function addBlog($name, $content, $requestTitle, $uid)
     ];
 }
 
+#regon
+    // function addBlog($name, $content, $requestTitle,$uid)
+    // {
+    //     global $conn;
 
-// function addBlog($name, $content, $requestTitle,$uid)
-// {
-//     global $conn;
+    //     $sql = "INSERT INTO blogs (name, content, requestTitle) VALUES (?, ?, ?)";
 
-//     $sql = "INSERT INTO blogs (name, content, requestTitle) VALUES (?, ?, ?)";
+    //     $stmt = $conn->prepare($sql);
 
-//     $stmt = $conn->prepare($sql);
+    //     if (!$stmt) {
+    //         error_log($conn->error);
+    //         return [
+    //             "error" => "Failed to prepare database query"
+    //         ];
+    //     }
 
-//     if (!$stmt) {
-//         error_log($conn->error);
-//         return [
-//             "error" => "Failed to prepare database query"
-//         ];
-//     }
+    //     $stmt->bind_param(
+    //         "sss",
+    //         $name,
+    //         $content,
+    //         $requestTitle
+    //     );
 
-//     $stmt->bind_param(
-//         "sss",
-//         $name,
-//         $content,
-//         $requestTitle
-//     );
+    //     if (!$stmt->execute()) {
+    //         error_log($stmt->error);
 
-//     if (!$stmt->execute()) {
-//         error_log($stmt->error);
+    //         $stmt->close();
 
-//         $stmt->close();
+    //         return [
+    //             "error" => "Failed to create event"
+    //         ];
+    //     }
 
-//         return [
-//             "error" => "Failed to create event"
-//         ];
-//     }
+    //     $blogId = $conn->insert_id;
 
-//     $blogId = $conn->insert_id;
+    //     $stmt->close();
 
-//     $stmt->close();
-
-//     return [
-//         "id" => $blogId
-//     ];
-// }
+    //     return [
+    //         "id" => $blogId
+    //     ];
+    // }
+#endregon
 
 function updateBlog(
     $blogId,
@@ -653,9 +837,21 @@ function updateBlog(
             "error" => "Admin not found"
         ];
     }
-
-
+    
     $admin = $adminResult->fetch_assoc();
+    
+    $ACLresult=checkAdminACL($admin["id"],"blog","edit");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for blog"
+            ]);
+
+            exit;
+
+        }
 
     $lastUpdateBy = $admin["id"];
 
@@ -731,10 +927,65 @@ function updateBlog(
     ];
 }
 
-
-function deleteBlog($id)
+function deleteBlog($id, $uid)
 {
     global $conn;
+
+        // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult=checkAdminACL($admin["id"],"blog","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for blog"
+            ]);
+
+            exit;
+
+        }
+    // }
 
     $id = (int)$id;
 

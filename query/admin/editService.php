@@ -163,7 +163,7 @@ if (!is_array($highlights)) {
 // 11. Get existing service
 // ---------------------------------------------------------
 
-$existingService = getServiceById($serviceId);
+$existingService = getServiceById($serviceId,true,$user["uid"]);
 
 if (array_key_exists("error", $existingService)) {
 

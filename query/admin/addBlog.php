@@ -58,6 +58,8 @@ $content = trim($_POST["content"] ?? "");
 // 5. Generate requestTitle
 // ---------------------------------------------------------
 
+$name = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+
 $requestTitle = preg_replace(
     '/\s+/',
     '-',
@@ -143,7 +145,8 @@ $blogId = $blog["id"];
 
 $images = saveBlogImages(
     $blogId,
-    $_FILES["thumb"]
+    $_FILES["thumb"],
+    $user["uid"]
 );
 
 

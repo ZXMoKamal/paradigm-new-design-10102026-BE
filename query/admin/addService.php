@@ -57,6 +57,8 @@ $iconCode = trim($_POST["iconCode"] ?? "");
 // 5. Generate requestTitle
 // ---------------------------------------------------------
 
+$title = preg_replace('/[^\p{L}\p{N}\s]/u', '', $title);
+
 $requestTitle = preg_replace(
     '/\s+/',
     '-',

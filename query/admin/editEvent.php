@@ -212,7 +212,7 @@ if (
 // 11. Check event exists
 // ---------------------------------------------------------
 
-$existingEvent = getEventById($eventId);
+$existingEvent = getEventById($eventId,true,$user["uid"]);
 
 
 if (array_key_exists("error", $existingEvent)) {
@@ -271,7 +271,9 @@ $images = updateEventImages(
     $eventId,
     $newThumb,
     $existingSliderImages,
-    $newSliderImages
+    $newSliderImages,
+    $user["uid"]
+
 );
 
 

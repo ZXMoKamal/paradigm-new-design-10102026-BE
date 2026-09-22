@@ -13,6 +13,65 @@ require_once("../../controllers/db/getAdmins.php");
 $user = verifyFirebaseToken();
 
 
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $user["uid"]
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"manageAdmins","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for admins"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
 // Check admin
 if (!$user["admin"]) {
 
@@ -96,7 +155,7 @@ function getAdminPermissions($adminId)
 
 
 try {
-
+global $user;
     /*
     |--------------------------------------------------------------------------
     | Get Admins
@@ -109,7 +168,9 @@ try {
                 name,
                 SupAdmin,
                 createdOn,
-                createdBy
+                createdBy,
+                lastUpdateOn,
+                lastUpdateBy
             FROM admins
             ORDER BY id DESC";
 
@@ -124,6 +185,7 @@ try {
 
 
     while ($row = $result->fetch_assoc()) {
+global $user;
 
         $adminId = (int)$row["id"];
 
@@ -138,6 +200,7 @@ try {
 
 
         try {
+global $user;
 
             /*
             |--------------------------------------------------------------------------
@@ -165,7 +228,12 @@ try {
                 "createdOn" => $row["createdOn"],
 
                 "createdBy" => getUserNamefromDB(
-                    $row["createdBy"]
+                    $row["createdBy"],$user["uid"]
+                ),
+                "lastUpdateOn" => $row["lastUpdateOn"],
+
+                "lastUpdateBy" => getUserNamefromDB(
+                    $row["lastUpdateBy"],$user["uid"]
                 ),
 
                 /*
@@ -176,10 +244,11 @@ try {
 
 
         } catch (\Throwable $e) {
+global $user;
 
             // Firebase user may have been deleted
 
-
+echo $e->getMessage();
             $admins[] = [
 
                 "id" => $adminId,
@@ -195,9 +264,13 @@ try {
                 "createdOn" => $row["createdOn"],
 
                 "createdBy" => getUserNamefromDB(
-                    $row["createdBy"]
+                    $row["createdBy"],$user["uid"]
                 ),
+                "lastUpdateOn" => $row["lastUpdateOn"],
 
+                "lastUpdateBy" => getUserNamefromDB(
+                    $row["lastUpdateBy"],$user["uid"]
+                ),
                 /*
                 | ACL permissions
                 */

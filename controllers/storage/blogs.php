@@ -1,4 +1,8 @@
 <?php
+
+require_once(__DIR__."/../db/ACL.php");
+    include(__DIR__."/../../configs/connectDB.php");
+
 //get thumb
 function getBlogThumb($id) {
 
@@ -30,53 +34,113 @@ function getBlogThumb($id) {
     return null;
 }
 
+#regon
+    // function getBlogImages($id) {
 
-// function getBlogImages($id) {
+    //     // Auto-detect base URL
+    //     $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-portfolio-backend/";
 
-//     // Auto-detect base URL
-//     $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-portfolio-backend/";
+    //     // Folder path (main event folder, NOT thumb)
+    //     $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "past events" . DIRECTORY_SEPARATOR . $id;
 
-//     // Folder path (main event folder, NOT thumb)
-//     $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "past events" . DIRECTORY_SEPARATOR . $id;
+    //     $basePath = realpath(__DIR__ . DIRECTORY_SEPARATOR . $relativePath);
 
-//     $basePath = realpath(__DIR__ . DIRECTORY_SEPARATOR . $relativePath);
+    //     // If folder doesn't exist
+    //     if (!$basePath) {
+    //         return [];
+    //     }
 
-//     // If folder doesn't exist
-//     if (!$basePath) {
-//         return [];
-//     }
+    //     // Allowed extensions
+    //     $extensions = ['png', 'jpg', 'jpeg', 'webp'];
 
-//     // Allowed extensions
-//     $extensions = ['png', 'jpg', 'jpeg', 'webp'];
+    //     $images = [];
 
-//     $images = [];
+    //     // Scan directory
+    //     $files = scandir($basePath);
 
-//     // Scan directory
-//     $files = scandir($basePath);
+    //     foreach ($files as $file) {
 
-//     foreach ($files as $file) {
+    //         // Skip current & parent dirs + thumb folder
+    //         if ($file === '.' || $file === '..' || $file === 'thumb') {
+    //             continue;
+    //         }
 
-//         // Skip current & parent dirs + thumb folder
-//         if ($file === '.' || $file === '..' || $file === 'thumb') {
-//             continue;
-//         }
+    //         // Get file extension
+    //         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-//         // Get file extension
-//         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    //         if (in_array($ext, $extensions)) {
 
-//         if (in_array($ext, $extensions)) {
+    //             // Build URL (encode spaces!)
+    //             $urlPath = "storage/images/past events/" . $id . "/" . $file;
+    //             $images[] = $baseUrl . str_replace(' ', '%20', $urlPath);
+    //         }
+    //     }
 
-//             // Build URL (encode spaces!)
-//             $urlPath = "storage/images/past events/" . $id . "/" . $file;
-//             $images[] = $baseUrl . str_replace(' ', '%20', $urlPath);
-//         }
-//     }
+    //     return $images;
+    // }
+#endregon
 
-//     return $images;
-// }
-
-function updateBlogImages($blogId, $newThumb)
+function updateBlogImages($blogId, $newThumb,$uid)
 {
+ global $conn;
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","edit");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for blog"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
     $allowedExtensions = [
         "jpg",
         "jpeg",
@@ -271,7 +335,66 @@ function updateBlogImages($blogId, $newThumb)
 }
 
 
-function saveBlogImages($blogId, $thumb){
+function saveBlogImages($blogId, $thumb, $uid){
+  global $conn;
+        // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","create");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for blog"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
     $allowedExtensions = [
         "jpg",
         "jpeg",
@@ -391,8 +514,70 @@ function saveBlogImages($blogId, $thumb){
 
 
 
-function deleteBlogStorage($blogId)
+function deleteBlogStorage($blogId, $uid)
 {
+  global $conn;
+
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for blog"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
+
     $blogId = (int)$blogId;
 
     if ($blogId <= 0) {
@@ -473,7 +658,7 @@ function deleteBlogStorage($blogId)
 
 
     // Delete directory recursively
-    if (!deleteBlogDirectory($blogPath)) {
+    if (!deleteBlogDirectory($blogPath,$uid)) {
 
         return [
             "error" => "Failed to delete blog storage"
@@ -490,8 +675,70 @@ function deleteBlogStorage($blogId)
 /**
  * Delete directory and all contents
  */
-function deleteBlogDirectory($directory)
+function deleteBlogDirectory($directory, $uid)
 {
+  global $conn;
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"blog","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for blog"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
+
+
     if (!is_dir($directory)) {
         return false;
     }

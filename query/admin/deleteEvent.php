@@ -80,7 +80,7 @@ $id = (int)$id;
 // 6. Delete from database
 // ---------------------------------------------------------
 
-$result = deleteEvent($id);
+$result = deleteEvent($id,$user["uid"]);
 
 
 if (array_key_exists("error", $result)) {
@@ -105,7 +105,9 @@ if (array_key_exists("error", $result)) {
 // 7. Delete event storage
 // ---------------------------------------------------------
 
-$storageResult = deleteEventStorage($id);
+$storageResult = deleteEventStorage($id,
+    $user["uid"]
+);
 
 
 if (array_key_exists("error", $storageResult)) {

@@ -9,11 +9,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $user = verifyFirebaseToken(false);
 
     $isAdmin = false;
-    $userId = null;
+    $userUId = null;
 
     if ($user && $user["admin"] === true) {
         $isAdmin = true;
-        // $userId = $user["id"];
+        $userUId = $user["uid"];
     }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all events data from db
 
-        $events =  getAllEvents(0,100,$isAdmin);
+        $events =  getAllEvents(0,100,$isAdmin,$userUId);
 
         if(array_key_exists("error",$events)){
             http_response_code(404);
@@ -53,9 +53,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
         if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
             $visitorId = htmlspecialchars($_GET["visitorId"]);
-            $events =  getEvent($requestTitle,$isAdmin,$visitorId);
+            $events =  getEvent($requestTitle,$isAdmin,$userUId,$visitorId);
         }else{
-            $events =  getEvent($requestTitle,$isAdmin);
+            $events =  getEvent($requestTitle,$isAdmin,$userUId);
         }
 
         if(array_key_exists("error",$events)){

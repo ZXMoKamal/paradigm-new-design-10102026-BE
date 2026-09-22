@@ -61,6 +61,8 @@ $date = trim($_POST["date"] ?? "");
 // 5. Generate requestTitle
 // ---------------------------------------------------------
 
+$name = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+
 $requestTitle = preg_replace(
     '/\s+/',
     '-',
@@ -205,7 +207,8 @@ $eventId = $event["id"];
 $images = saveEventImages(
     $eventId,
     $_FILES["thumb"],
-    $_FILES["sliderImages"]
+    $_FILES["sliderImages"],
+    $user["uid"]
 );
 
 

@@ -9,11 +9,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $user = verifyFirebaseToken(false);
 
     $isAdmin = false;
-    $userId = null;
+    $userUId = null;
 
     if ($user && $user["admin"] === true) {
         $isAdmin = true;
-        // $userId = $user["id"];
+        $userUId = $user["uid"];
     }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all blog data from db
 
-        $blogs =  getAllBlogs(0,20,$isAdmin);
+        $blogs =  getAllBlogs(0,20,$isAdmin,$userUId);
 
         if(array_key_exists("error",$blogs)){
             http_response_code(404);
@@ -53,9 +53,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
         if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
             $visitorId = htmlspecialchars($_GET["visitorId"]);
-            $blogs =  getBlog($requestTitle,$isAdmin,$visitorId);
+            $blogs =  getBlog($requestTitle,$isAdmin,$userUId,$visitorId);
         }else{
-            $blogs =  getBlog($requestTitle,$isAdmin);
+            $blogs =  getBlog($requestTitle,$isAdmin,$userUId);
         }
 
         if(array_key_exists("error",$blogs)){

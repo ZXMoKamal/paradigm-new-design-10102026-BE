@@ -150,7 +150,7 @@ if (
 // 9. Check if blog exists
 // ---------------------------------------------------------
 
-$existingBlog = getBlogById($blogId);
+$existingBlog = getBlogById($blogId, true, $user["uid"]);
 
 if (!$existingBlog) {
 
@@ -217,7 +217,9 @@ if (array_key_exists("error", $blog)) {
 
 $images = updateBlogImages(
     $blogId,
-    $newThumb
+    $newThumb,
+    $user["uid"]
+
 );
 
 

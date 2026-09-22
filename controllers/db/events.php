@@ -1,6 +1,7 @@
 <?php
 include(__DIR__."/../../configs/connectDB.php");
     require_once(__DIR__."/getAdmins.php");
+    require_once(__DIR__."/ACL.php");
     
 // function getAllEvents($from, $to) {
 
@@ -37,9 +38,66 @@ include(__DIR__."/../../configs/connectDB.php");
 
 //     return $data;
 // }
-function getAllEvents($from, $to, $isAdmin = false)
+function getAllEvents($from, $to, $isAdmin = false, $uid)
 {
     global $conn;
+
+
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for events"
+            ]);
+
+            exit;
+
+        }
+    }
 
     // Validate inputs
     $from = (int)$from;
@@ -120,13 +178,13 @@ function getAllEvents($from, $to, $isAdmin = false)
             if ($event["createdBy"] !== null) {
 
                 $event["createdBy"] = getUserNamefromDB(
-                    (int)$event["createdBy"]
+                    (int)$event["createdBy"],$uid
                 );
             }
             if ($event["lastUpdateBy"] !== null) {
 
                 $event["lastUpdateBy"] = getUserNamefromDB(
-                    (int)$event["lastUpdateBy"]
+                    (int)$event["lastUpdateBy"],$uid
                 );
             }
         }
@@ -139,7 +197,6 @@ function getAllEvents($from, $to, $isAdmin = false)
 
     return $data;
 }
-
 
 // function getEvent($requestTitle) {
 
@@ -163,10 +220,66 @@ function getAllEvents($from, $to, $isAdmin = false)
 //     return $data;
 // }
 
-function getEvent($requestTitle, $isAdmin = false, $visitorId = null)
+function getEvent($requestTitle, $isAdmin = false, $uid, $visitorId = null)
 {
     global $conn;
 
+    
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for events"
+            ]);
+
+            exit;
+
+        }
+    }
 
     /*
      * Public users
@@ -241,7 +354,7 @@ function getEvent($requestTitle, $isAdmin = false, $visitorId = null)
         if ($data["createdBy"] !== null) {
 
             $data["createdBy"] = getUserNamefromDB(
-                (int)$data["createdBy"]
+                (int)$data["createdBy"],$uid
             );
         }
     }
@@ -295,9 +408,66 @@ function getEvent($requestTitle, $isAdmin = false, $visitorId = null)
     return $data;
 }
 
-function getEventById($eventId, $isAdmin = false, $visitorId = null)
+function getEventById($eventId, $isAdmin = false, $uid, $visitorId = null)
 {
     global $conn;
+
+
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for events"
+            ]);
+
+            exit;
+
+        }
+    }
 
 
     /*
@@ -373,7 +543,7 @@ function getEventById($eventId, $isAdmin = false, $visitorId = null)
         if ($data["createdBy"] !== null) {
 
             $data["createdBy"] = getUserNamefromDB(
-                (int)$data["createdBy"]
+                (int)$data["createdBy"],$uid
             );
         }
     }
@@ -427,8 +597,6 @@ function getEventById($eventId, $isAdmin = false, $visitorId = null)
     return $data;
 }
 
-
-
 function addEvent($name, $description, $client, $location, $date, $requestTitle,$uid)
 {
     global $conn;
@@ -474,7 +642,18 @@ function addEvent($name, $description, $client, $location, $date, $requestTitle,
     }
 
     $admin = $adminResult->fetch_assoc();
+            $ACLresult = checkAdminACL($admin["id"],"events","create");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
 
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for events"
+            ]);
+
+            exit;
+
+        }
     $createdBy = $admin["id"];
     $lastUpdateBy = $admin["id"];
 
@@ -605,6 +784,18 @@ function updateEvent(
     $admin =
         $adminResult->fetch_assoc();
 
+        $ACLresult = checkAdminACL($admin["id"],"events","edit");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for events"
+            ]);
+
+            exit;
+
+        }
 
     $lastUpdateBy =
         $admin["id"];
@@ -689,10 +880,67 @@ function updateEvent(
     ];
 }
 
-
-function deleteEvent($id)
+function deleteEvent($id,$uid)
 {
     global $conn;
+
+
+ //  if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult=checkAdminACL($admin["id"],"events","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for events"
+            ]);
+
+            exit;
+
+        }
+    // }
+
 
     $id = (int)$id;
 

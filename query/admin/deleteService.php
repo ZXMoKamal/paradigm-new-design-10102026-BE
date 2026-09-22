@@ -79,7 +79,7 @@ $id = (int)$id;
 // 6. Delete from database
 // ---------------------------------------------------------
 
-$result = deleteService($id);
+$result = deleteService($id,$user["uid"]);
 
 
 if (array_key_exists("error", $result)) {

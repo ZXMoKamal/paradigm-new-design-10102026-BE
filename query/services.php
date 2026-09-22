@@ -9,11 +9,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $user = verifyFirebaseToken(false);
 
     $isAdmin = false;
-    $userId = null;
+    $userUId = null;
 
     if ($user && $user["admin"] === true) {
         $isAdmin = true;
-        // $userId = $user["id"];
+        $userUId = $user["uid"];
     }
 
     $requestTitle = array_key_exists("requestTitle", $_GET)?htmlspecialchars($_GET['requestTitle']):"all";
@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         //$get all services data from db
 
-        $services =  getAllServices($isAdmin);
+        $services =  getAllServices($isAdmin,$userUId);
 
 
     } else if($requestTitle) {
@@ -32,9 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $requestTitle = html_entity_decode(urldecode($requestTitle), ENT_QUOTES | ENT_HTML5);
         if(isset($_GET["visitorId"]) && !empty($_GET["visitorId"])){
             $visitorId = htmlspecialchars($_GET["visitorId"]);
-            $services =  getService($requestTitle,$isAdmin,$visitorId);
+            $services =  getService($requestTitle,$isAdmin,$userUId,$visitorId);
         }else{
-            $services =  getService($requestTitle,$isAdmin);
+            $services =  getService($requestTitle,$isAdmin,$userUId);
         }
     }
         

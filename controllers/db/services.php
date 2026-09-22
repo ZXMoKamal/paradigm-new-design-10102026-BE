@@ -1,10 +1,70 @@
 <?php
 include(__DIR__."/../../configs/connectDB.php");
     require_once(__DIR__."/getAdmins.php");
+    require_once(__DIR__."/ACL.php");
     
-function getAllServices($isAdmin = false)
+function getAllServices($isAdmin = false,$uid)
 {
     global $conn;
+
+
+        if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"services","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for services"
+            ]);
+
+            exit;
+
+        }
+    }
+
+
 
     /*
      * Public users
@@ -61,13 +121,13 @@ function getAllServices($isAdmin = false)
             if ($service["createdBy"] !== null) {
 
                 $service["createdBy"] = getUserNamefromDB(
-                    (int)$service["createdBy"]
+                    (int)$service["createdBy"],$uid
                 );
             }
             if ($service["lastUpdateBy"] !== null) {
 
                 $service["lastUpdateBy"] = getUserNamefromDB(
-                    (int)$service["lastUpdateBy"]
+                    (int)$service["lastUpdateBy"],$uid
                 );
             }
         }
@@ -80,10 +140,65 @@ function getAllServices($isAdmin = false)
 }
 
 
-function getService($requestTitle, $isAdmin = false, $visitorId = null)
+function getService($requestTitle, $isAdmin = false, $uid, $visitorId = null)
 {
     global $conn;
 
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"services","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for services"
+            ]);
+
+            exit;
+
+        }
+    }
 
     /*
      * Public users
@@ -198,7 +313,7 @@ function getService($requestTitle, $isAdmin = false, $visitorId = null)
         if ($data["createdBy"] !== null) {
 
             $data["createdBy"] = getUserNamefromDB(
-                (int)$data["createdBy"]
+                (int)$data["createdBy"],$uid
             );
         }
     }
@@ -253,9 +368,65 @@ function getService($requestTitle, $isAdmin = false, $visitorId = null)
 }
 
 
-function getServiceById($id)
+function getServiceById($id, $isAdmin = false,$uid)
 {
     global $conn;
+
+    if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"services","view");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have view access for services"
+            ]);
+
+            exit;
+
+        }
+    }
 
     $sql = "SELECT id, title FROM services WHERE id = ?";
 
@@ -336,6 +507,19 @@ function addService($title, $iconCode, $requestTitle, $uid)
     }
 
     $admin = $adminResult->fetch_assoc();
+
+       $ACLresult = checkAdminACL($admin["id"],"services","create");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for services"
+            ]);
+
+            exit;
+
+        }
 
     $createdBy = $admin["id"];
     $lastUpdateBy = $admin["id"];
@@ -455,6 +639,19 @@ function addServiceHighlights($serviceId, $highlights, $uid)
 
     $admin = $adminResult->fetch_assoc();
 
+       $ACLresult = checkAdminACL($admin["id"],"services","create");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for services"
+            ]);
+
+            exit;
+
+        }
+
     $createdBy = $admin["id"];
 
     $adminStmt->close();
@@ -560,6 +757,19 @@ function updateService(
     }
 
     $admin = $adminResult->fetch_assoc();
+
+       $ACLresult = checkAdminACL($admin["id"],"services","edit");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for services"
+            ]);
+
+            exit;
+
+        }
 
     $lastUpdateBy = $admin["id"];
 
@@ -690,6 +900,19 @@ function updateServiceHighlights(
 
     $admin = $adminResult->fetch_assoc();
 
+       $ACLresult = checkAdminACL($admin["id"],"services","edit");
+            if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for services"
+            ]);
+
+            exit;
+
+        }
+
     $lastUpdateBy = $admin["id"];
 
     $adminStmt->close();
@@ -807,9 +1030,65 @@ function updateServiceHighlights(
 }
 
 
-function deleteService($id)
+function deleteService($id,$uid)
 {
     global $conn;
+
+     // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult=checkAdminACL($admin["id"],"services","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for services"
+            ]);
+
+            exit;
+
+        }
+    // }
 
     $id = (int)$id;
 

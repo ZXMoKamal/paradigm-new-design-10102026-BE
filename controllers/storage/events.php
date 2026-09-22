@@ -1,4 +1,8 @@
 <?php
+require_once(__DIR__."/../db/ACL.php");
+    include(__DIR__."/../../configs/connectDB.php");
+
+
 //get thumb
 function getEventThumb($id) {
 
@@ -74,8 +78,6 @@ function getEventImages($id) {
 
     return $images;
 }
-
-
 
 // function saveEventImages($eventId, $thumb, $sliderImages){
 //     $allowedExtensions = [
@@ -262,8 +264,71 @@ function getEventImages($id) {
 //         "sliderImages" => $savedSliderImages
 //     ];
 // }
-function saveEventImages($eventId, $thumb, $sliderImages)
+function saveEventImages($eventId, $thumb, $sliderImages,$uid)
 {
+
+ global $conn;
+
+ // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","create");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have create access for events"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
+
+
     $allowedExtensions = [
         "jpg",
         "jpeg",
@@ -535,8 +600,69 @@ function updateEventImages(
     $eventId,
     $newThumb,
     $existingSliderImages,
-    $newSliderImages
+    $newSliderImages,
+    $uid
 ) {
+    global $conn;
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","edit");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have edit access for events"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
     $allowedExtensions = [
         "jpg",
         "jpeg",
@@ -1014,9 +1140,71 @@ function updateEventImages(
     ];
 }
 
-
-function deleteEventStorage($eventId)
+function deleteEventStorage($eventId,$uid)
 {
+    global $conn;
+
+    
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for events"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
+
     $eventId = (int)$eventId;
 
     if ($eventId <= 0) {
@@ -1097,7 +1285,7 @@ function deleteEventStorage($eventId)
 
 
     // Delete directory recursively
-    if (!deleteEventDirectory($eventPath)) {
+    if (!deleteEventDirectory($eventPath,$uid)) {
 
         return [
             "error" => "Failed to delete event storage"
@@ -1110,12 +1298,72 @@ function deleteEventStorage($eventId)
     ];
 }
 
-
 /**
  * Delete directory and all contents
  */
-function deleteEventDirectory($directory)
+function deleteEventDirectory($directory,$uid)
 {
+  global $conn;
+
+    // if($isAdmin){
+        /*
+        * Get admin database ID using Firebase UID
+        */
+        $adminSql = "SELECT id FROM admins WHERE fbuid = ? LIMIT 1";
+
+        $adminStmt = $conn->prepare($adminSql);
+
+        if (!$adminStmt) {
+            error_log($conn->error);
+
+            return [
+                "error" => "Failed to prepare admin query"
+            ];
+        }
+
+        $adminStmt->bind_param(
+            "s",
+            $uid
+        );
+
+        if (!$adminStmt->execute()) {
+            error_log($adminStmt->error);
+
+            $adminStmt->close();
+
+            return [
+                "error" => "Failed to find admin"
+            ];
+        }
+
+        $adminResult = $adminStmt->get_result();
+
+        if ($adminResult->num_rows === 0) {
+            $adminStmt->close();
+
+            return [
+                "error" => "Admin not found"
+            ];
+        }
+
+        $admin = $adminResult->fetch_assoc();
+        $ACLresult= checkAdminACL($admin["id"],"events","delete");
+        if(!($ACLresult["success"] && $ACLresult["allowed"])){
+
+            http_response_code(403);
+
+            echo json_encode([
+                "error" => "You do not have delete access for events"
+            ]);
+
+            exit;
+
+        }
+    // }
+
+
+
+
     if (!is_dir($directory)) {
         return false;
     }
