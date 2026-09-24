@@ -11,7 +11,7 @@
         "prompt" => "consent"
     ];
 
-    $authUrl = GOOGLE_AUTH_URL . '?' . http_build_query($params);
+    $authUrl = $config["googleCloudConsole"]["GOOGLE_AUTH_URL"]. '?' . http_build_query($params);
 
     header("Location: " . $authUrl);
 
