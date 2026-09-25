@@ -1,7 +1,8 @@
 <?php
 
-require_once("../../configs/google.php");
-require_once("./googleToken.php");
+require_once(__DIR__ . "/../googleCloude/googleToken.php");
+
+$config = require __DIR__ . "/../../../../../../configs/paradigm-config.php";
 
 function getSearchConsoleData(
     $siteUrl,

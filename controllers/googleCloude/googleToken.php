@@ -1,12 +1,13 @@
 <?php
 
-require_once("../../configs/google.php");
-require_once("../../configs/connectDB.php");
+require_once __DIR__ . "/../../configs/connectDB.php";
+
+$config = require __DIR__ . "/../../../../../../configs/paradigm-config.php";
 
 
 function getGoogleAccessToken()
 {
-    global $conn;
+    global $conn, $config;
 
 
     // ---------------------------------------------
@@ -51,9 +52,9 @@ function getGoogleAccessToken()
 
     $postData = [
 
-        "client_id" => GOOGLE_CLIENT_ID,
+        "client_id" => $config["googleCloudConsole"]["GOOGLE_CLIENT_ID"],
 
-        "client_secret" => GOOGLE_CLIENT_SECRET,
+        "client_secret" => $config["googleCloudConsole"]["GOOGLE_CLIENT_SECRET"],
 
         "refresh_token" => $refreshToken,
 
@@ -61,7 +62,7 @@ function getGoogleAccessToken()
     ];
 
 
-    $ch = curl_init(GOOGLE_TOKEN_URL);
+    $ch = curl_init($config["googleCloudConsole"]["GOOGLE_TOKEN_URL"]);
 
 
     curl_setopt_array($ch, [
