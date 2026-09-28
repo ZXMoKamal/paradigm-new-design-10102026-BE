@@ -368,7 +368,7 @@ function getService($requestTitle, $isAdmin = false, $uid, $visitorId = null)
 }
 
 
-function getServiceById($id, $isAdmin = false,$uid)
+function getServiceById($id, $isAdmin = false,$uid=null)
 {
     global $conn;
 

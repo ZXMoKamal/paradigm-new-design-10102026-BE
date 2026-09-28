@@ -662,15 +662,15 @@ function adminMSGTemplate(
 </html>
 ';
 }
-echo adminMSGTemplate(
-    "cust1",
-    "sads@dsad.com",
-    "01015454546",
-    "sadsads sadsa",
-    "asdasdsa",
-    "asdasdasdasdas"
-);
+// echo adminMSGTemplate(
+//     "cust1",
+//     "sads@dsad.com",
+//     "01015454546",
+//     "sadsads sadsa",
+//     "asdasdsa",
+//     "asdasdasdasdas"
+// );
 
-echo "------------------";
+// echo "------------------";
 
-echo customerMSGTemplate("cust1");
+// echo customerMSGTemplate("cust1");
