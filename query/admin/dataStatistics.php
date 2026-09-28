@@ -247,7 +247,8 @@ $sql = "
     SELECT
         e.id,
         e.name,
-        COUNT(ev.id) AS visits
+        COUNT(ev.id) AS visits,
+duration
 
     FROM events_visits ev
 
@@ -288,7 +289,8 @@ while ($row = $result->fetch_assoc()) {
     $events[] = [
         "id" => (int) $row["id"],
         "name" => $row["name"],
-        "visits" => (int) $row["visits"]
+        "visits" => (int) $row["visits"],
+        "duration" => (int) $row["duration"],
     ];
 }
 
@@ -303,7 +305,8 @@ $sql = "
     SELECT
         s.id,
         s.title,
-        COUNT(sv.id) AS visits
+        COUNT(sv.id) AS visits,
+duration
 
     FROM services_visits sv
 
@@ -344,7 +347,8 @@ while ($row = $result->fetch_assoc()) {
     $services[] = [
         "id" => (int) $row["id"],
         "name" => $row["title"],
-        "visits" => (int) $row["visits"]
+        "visits" => (int) $row["visits"],
+        "duration" => (int) $row["duration"],
     ];
 }
 
@@ -359,8 +363,8 @@ $sql = "
     SELECT
         b.id,
         b.name,
-        COUNT(bv.id) AS visits
-
+        COUNT(bv.id) AS visits,
+duration
     FROM blog_visits bv
 
     INNER JOIN blogs b
@@ -400,7 +404,8 @@ while ($row = $result->fetch_assoc()) {
     $blogs[] = [
         "id" => (int) $row["id"],
         "name" => $row["name"],
-        "visits" => (int) $row["visits"]
+        "visits" => (int) $row["visits"],
+        "duration" => (int) $row["duration"],
     ];
 }
 

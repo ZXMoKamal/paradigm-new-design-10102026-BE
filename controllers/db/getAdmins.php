@@ -1,4 +1,5 @@
 <?php
+
 function getUserNamefromDB($id,$uid) {
 global $conn;
      /*
