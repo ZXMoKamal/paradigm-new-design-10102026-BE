@@ -7,7 +7,7 @@ require_once(__DIR__."/../db/ACL.php");
 function getBlogThumb($id) {
 
     // Auto-detect base URL
-    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-portfolio-backend/";
+    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "https://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-new-design-10102026-BE/";
 
     // Build absolute path safely
     $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "blog" . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . "thumb";

@@ -36,9 +36,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
                 // Get thumb URL using your function
                 $thumb = getEventThumb($event['id']);
+                $HQthumb = getEventHQThumb($event['id']);
 
                 // Add it to the same array
                 $event['thumb'] = $thumb;
+                $event['HQthumb'] = $HQthumb;
             }
 
             echo json_encode($events,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -68,6 +70,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
             $thumb = getEventThumb($events['id']);
             $events['thumb'] = $thumb;
+            
+            $HQthumb = getEventHQThumb($events['id']);
+            $events['HQthumb'] = $HQthumb;
 
             $images = getEventImages($events['id']);
             $events['images'] = $images;

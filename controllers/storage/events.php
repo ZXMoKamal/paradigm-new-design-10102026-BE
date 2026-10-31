@@ -7,7 +7,7 @@ require_once(__DIR__."/../db/ACL.php");
 function getEventThumb($id) {
 
     // Auto-detect base URL
-    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-portfolio-backend/";
+    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "https://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-new-design-10102026-BE/";
 
     // Build absolute path safely
     $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "past events" . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . "thumb";
@@ -34,11 +34,42 @@ function getEventThumb($id) {
     return null;
 }
 
+//get HQthumb
+function getEventHQThumb($id) {
+
+    // Auto-detect base URL
+    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "https://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-new-design-10102026-BE/";
+
+    // Build absolute path safely
+    $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "past events" . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . "HQ thumb";
+
+    $basePath = realpath(__DIR__ . DIRECTORY_SEPARATOR . $relativePath);
+
+    // If folder doesn't exist
+    if (!$basePath) {
+        return null;
+    }
+
+    // Allowed extensions
+    $extensions = ['webp', 'jpg', 'jpeg', 'png'];
+
+    foreach ($extensions as $ext) {
+
+        $filePath = $basePath . DIRECTORY_SEPARATOR . "HQ thumb." . $ext;
+
+        if (file_exists($filePath)) {
+            return $baseUrl . "storage/images/past events/" . $id . "/HQ thumb/HQ thumb." . $ext;
+        }
+    }
+
+    return null;
+}
+
 
 function getEventImages($id) {
 
     // Auto-detect base URL
-    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-portfolio-backend/";
+    $baseUrl = (isset($_SERVER['HTTPS']) ? "https://" : "https://") . $_SERVER['HTTP_HOST'] . "/paradigm/backend/paradigm-new-design-10102026-BE/";
 
     // Folder path (main event folder, NOT thumb)
     $relativePath = ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . "past events" . DIRECTORY_SEPARATOR . $id;
@@ -79,191 +110,6 @@ function getEventImages($id) {
     return $images;
 }
 
-// function saveEventImages($eventId, $thumb, $sliderImages){
-//     $allowedExtensions = [
-//         "jpg",
-//         "jpeg",
-//         "png",
-//         "webp"
-//     ];
-
-//     $allowedMimeTypes = [
-//         "image/jpeg",
-//         "image/png",
-//         "image/webp"
-//     ];
-
-
-//     // ---------------------------------------------------------
-//     // Event storage paths
-//     // ---------------------------------------------------------
-
-//     $storagePath =
-//         __DIR__ .
-//         DIRECTORY_SEPARATOR .
-//         ".." .
-//         DIRECTORY_SEPARATOR .
-//         ".." .
-//         DIRECTORY_SEPARATOR .
-//         "storage" .
-//         DIRECTORY_SEPARATOR .
-//         "images" .
-//         DIRECTORY_SEPARATOR .
-//         "past events" .
-//         DIRECTORY_SEPARATOR .
-//         $eventId;
-
-//     $thumbPath =
-//         $storagePath .
-//         DIRECTORY_SEPARATOR .
-//         "thumb";
-
-
-//     // ---------------------------------------------------------
-//     // Create directories
-//     // ---------------------------------------------------------
-
-//     if (!is_dir($storagePath)) {
-
-//         if (!mkdir($storagePath, 0755, true)) {
-
-//             return [
-//                 "error" => "Failed to create event storage directory"
-//             ];
-//         }
-//     }
-
-
-//     if (!is_dir($thumbPath)) {
-
-//         if (!mkdir($thumbPath, 0755, true)) {
-
-//             return [
-//                 "error" => "Failed to create thumbnail directory"
-//             ];
-//         }
-//     }
-
-
-//     // ---------------------------------------------------------
-//     // Validate thumbnail
-//     // ---------------------------------------------------------
-
-//     $thumbExtension = strtolower(
-//         pathinfo($thumb["name"], PATHINFO_EXTENSION)
-//     );
-
-//     $thumbMime = mime_content_type($thumb["tmp_name"]);
-
-//     if (
-//         !in_array($thumbExtension, $allowedExtensions, true) ||
-//         !in_array($thumbMime, $allowedMimeTypes, true)
-//     ) {
-
-//         return [
-//             "error" => "Invalid thumbnail image type"
-//         ];
-//     }
-
-
-//     // ---------------------------------------------------------
-//     // Save thumbnail
-//     // ---------------------------------------------------------
-
-//     $thumbFileName =
-//         "thumb." .
-//         $thumbExtension;
-
-//     $thumbDestination =
-//         $thumbPath .
-//         DIRECTORY_SEPARATOR .
-//         $thumbFileName;
-
-
-//     if (!move_uploaded_file(
-//         $thumb["tmp_name"],
-//         $thumbDestination
-//     )) {
-
-//         return [
-//             "error" => "Failed to save thumbnail"
-//         ];
-//     }
-
-
-//     // ---------------------------------------------------------
-//     // Save slider images
-//     // ---------------------------------------------------------
-
-//     $savedSliderImages = [];
-
-//     $sliderCount = count($sliderImages["name"]);
-
-
-//     for ($i = 0; $i < $sliderCount; $i++) {
-
-//         if (
-//             $sliderImages["error"][$i]
-//             !== UPLOAD_ERR_OK
-//         ) {
-//             continue;
-//         }
-
-
-//         $tmpName =
-//             $sliderImages["tmp_name"][$i];
-
-//         $originalName =
-//             $sliderImages["name"][$i];
-
-
-//         $extension = strtolower(
-//             pathinfo($originalName, PATHINFO_EXTENSION)
-//         );
-
-
-//         $mimeType =
-//             mime_content_type($tmpName);
-
-
-//         // Validate image
-//         if (
-//             !in_array($extension, $allowedExtensions, true) ||
-//             !in_array($mimeType, $allowedMimeTypes, true)
-//         ) {
-//             continue;
-//         }
-
-
-//         // Generate filename
-//         $fileName =
-//             "image-" .
-//             ($i + 1) .
-//             "." .
-//             $extension;
-
-
-//         $destination =
-//             $storagePath .
-//             DIRECTORY_SEPARATOR .
-//             $fileName;
-
-
-//         if (move_uploaded_file(
-//             $tmpName,
-//             $destination
-//         )) {
-
-//             $savedSliderImages[] = $fileName;
-//         }
-//     }
-
-
-//     return [
-//         "thumbnail" => $thumbFileName,
-//         "sliderImages" => $savedSliderImages
-//     ];
-// }
 function saveEventImages($eventId, $thumb, $sliderImages,$uid)
 {
 
@@ -1409,3 +1255,191 @@ function deleteEventDirectory($directory,$uid)
 
     return rmdir($directory);
 }
+
+
+
+// function saveEventImages($eventId, $thumb, $sliderImages){
+//     $allowedExtensions = [
+//         "jpg",
+//         "jpeg",
+//         "png",
+//         "webp"
+//     ];
+
+//     $allowedMimeTypes = [
+//         "image/jpeg",
+//         "image/png",
+//         "image/webp"
+//     ];
+
+
+//     // ---------------------------------------------------------
+//     // Event storage paths
+//     // ---------------------------------------------------------
+
+//     $storagePath =
+//         __DIR__ .
+//         DIRECTORY_SEPARATOR .
+//         ".." .
+//         DIRECTORY_SEPARATOR .
+//         ".." .
+//         DIRECTORY_SEPARATOR .
+//         "storage" .
+//         DIRECTORY_SEPARATOR .
+//         "images" .
+//         DIRECTORY_SEPARATOR .
+//         "past events" .
+//         DIRECTORY_SEPARATOR .
+//         $eventId;
+
+//     $thumbPath =
+//         $storagePath .
+//         DIRECTORY_SEPARATOR .
+//         "thumb";
+
+
+//     // ---------------------------------------------------------
+//     // Create directories
+//     // ---------------------------------------------------------
+
+//     if (!is_dir($storagePath)) {
+
+//         if (!mkdir($storagePath, 0755, true)) {
+
+//             return [
+//                 "error" => "Failed to create event storage directory"
+//             ];
+//         }
+//     }
+
+
+//     if (!is_dir($thumbPath)) {
+
+//         if (!mkdir($thumbPath, 0755, true)) {
+
+//             return [
+//                 "error" => "Failed to create thumbnail directory"
+//             ];
+//         }
+//     }
+
+
+//     // ---------------------------------------------------------
+//     // Validate thumbnail
+//     // ---------------------------------------------------------
+
+//     $thumbExtension = strtolower(
+//         pathinfo($thumb["name"], PATHINFO_EXTENSION)
+//     );
+
+//     $thumbMime = mime_content_type($thumb["tmp_name"]);
+
+//     if (
+//         !in_array($thumbExtension, $allowedExtensions, true) ||
+//         !in_array($thumbMime, $allowedMimeTypes, true)
+//     ) {
+
+//         return [
+//             "error" => "Invalid thumbnail image type"
+//         ];
+//     }
+
+
+//     // ---------------------------------------------------------
+//     // Save thumbnail
+//     // ---------------------------------------------------------
+
+//     $thumbFileName =
+//         "thumb." .
+//         $thumbExtension;
+
+//     $thumbDestination =
+//         $thumbPath .
+//         DIRECTORY_SEPARATOR .
+//         $thumbFileName;
+
+
+//     if (!move_uploaded_file(
+//         $thumb["tmp_name"],
+//         $thumbDestination
+//     )) {
+
+//         return [
+//             "error" => "Failed to save thumbnail"
+//         ];
+//     }
+
+
+//     // ---------------------------------------------------------
+//     // Save slider images
+//     // ---------------------------------------------------------
+
+//     $savedSliderImages = [];
+
+//     $sliderCount = count($sliderImages["name"]);
+
+
+//     for ($i = 0; $i < $sliderCount; $i++) {
+
+//         if (
+//             $sliderImages["error"][$i]
+//             !== UPLOAD_ERR_OK
+//         ) {
+//             continue;
+//         }
+
+
+//         $tmpName =
+//             $sliderImages["tmp_name"][$i];
+
+//         $originalName =
+//             $sliderImages["name"][$i];
+
+
+//         $extension = strtolower(
+//             pathinfo($originalName, PATHINFO_EXTENSION)
+//         );
+
+
+//         $mimeType =
+//             mime_content_type($tmpName);
+
+
+//         // Validate image
+//         if (
+//             !in_array($extension, $allowedExtensions, true) ||
+//             !in_array($mimeType, $allowedMimeTypes, true)
+//         ) {
+//             continue;
+//         }
+
+
+//         // Generate filename
+//         $fileName =
+//             "image-" .
+//             ($i + 1) .
+//             "." .
+//             $extension;
+
+
+//         $destination =
+//             $storagePath .
+//             DIRECTORY_SEPARATOR .
+//             $fileName;
+
+
+//         if (move_uploaded_file(
+//             $tmpName,
+//             $destination
+//         )) {
+
+//             $savedSliderImages[] = $fileName;
+//         }
+//     }
+
+
+//     return [
+//         "thumbnail" => $thumbFileName,
+//         "sliderImages" => $savedSliderImages
+//     ];
+// }
